@@ -1,5 +1,7 @@
 # In Control
 
+**Take the course: https://danbarrett316.github.io/spc-course/**
+
 A free, interactive course in statistical process control (SPC), built on chapter 6,
 "Process or Product Monitoring and Control", of the
 [NIST/SEMATECH e-Handbook of Statistical Methods](https://www.itl.nist.gov/div898/handbook/pmc/pmc.htm).
