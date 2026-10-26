@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en" class="math-pending">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Formula sheet · In Control</title>
+<meta name="description" content="Every control chart formula in the In Control course on one page: Shewhart variables and attributes charts, CUSUM, EWMA, Hotelling T², capability indices, acceptance sampling and exponential smoothing, with a full table of control chart constants.">
+<script>try{var t=localStorage.getItem('in-control:theme');if(t&&t!=='system')document.documentElement.dataset.theme=t}catch(e){}setTimeout(function(){document.documentElement.classList.remove('math-pending')},3000)</script>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="Formula sheet · In Control">
+<meta property="og:description" content="Every control chart formula in the In Control course on one page: Shewhart variables and attributes charts, CUSUM, EWMA, Hotelling T², capability indices, acceptance sampling and exponential smoothing, with a full table of control chart constants.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap">
+<link rel="stylesheet" href="../assets/css/course.css">
+<style>
+  .formula-toc { margin-top: -1.25rem; margin-bottom: 2.75rem; }
+  .const-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; }
+  .const-pick input { width: 5.5rem; }
+  .page section > h3 + .eq { margin-top: 0.6rem; }
+</style>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script type="module" src="../assets/js/course.js"></script>
+<script type="module" src="../assets/js/reference/formulas.js"></script>
+</head>
+<body data-page="formulas">
+<div class="shell">
+<nav class="rail" id="rail"></nav>
+<main class="page" id="main">
+
+<header class="module-head">
+  <div class="head-text">
+    <p class="eyebrow">Reference</p>
+    <h1>Formula sheet</h1>
+    <p class="lede">Every chart in the course on one page: what it plots, where its center line sits and how its limits are set, with a link back to the module that explains it.</p>
+  </div>
+</header>
+
+<ul class="toc formula-toc" aria-label="Sections on this page">
+  <li><a href="#variables">Variables charts</a></li>
+  <li><a href="#constants">Constants</a></li>
+  <li><a href="#attributes">Attributes charts</a></li>
+  <li><a href="#run-rules">Run rules</a></li>
+  <li><a href="#arl">Average run length</a></li>
+  <li><a href="#cusum">CUSUM</a></li>
+  <li><a href="#ewma">EWMA</a></li>
+  <li><a href="#capability">Capability</a></li>
+  <li><a href="#acceptance">Acceptance sampling</a></li>
+  <li><a href="#multivariate">Hotelling T²</a></li>
+  <li><a href="#smoothing">Exponential smoothing</a></li>
+</ul>
+
+<section id="variables">
+  <h2>Variables charts</h2>
+  <p class="fig-note">Explained in <a href="../modules/03-xbar-r-s.html">module 3, X̄ and R or s charts</a>, and <a href="../modules/04-individuals.html">module 4, individuals and moving range charts</a>.</p>
+
+  <h3>X̄ and R chart</h3>
+  <div class="eq">\begin{aligned}
+\text{UCL}_{\bar{x}} &= \bar{\bar{x}} + A_2\bar{R} & \text{UCL}_R &= D_4\bar{R} \\
+\text{CL}_{\bar{x}} &= \bar{\bar{x}} & \text{CL}_R &= \bar{R} \\
+\text{LCL}_{\bar{x}} &= \bar{\bar{x}} - A_2\bar{R} & \text{LCL}_R &= D_3\bar{R}
+\end{aligned}</div>
+  <div class="eq">\hat\sigma = \frac{\bar{R}}{d_2}, \qquad A_2 = \frac{3}{d_2\sqrt{n}}, \qquad D_3 = \max\!\left(0,\ 1 - \frac{3d_3}{d_2}\right), \qquad D_4 = 1 + \frac{3d_3}{d_2}</div>
+  <dl class="where">
+    <dt><span class="m">\bar{\bar{x}}</span></dt><dd>grand mean, the average of the subgroup means</dd>
+    <dt><span class="m">\bar{R}</span></dt><dd>average subgroup range</dd>
+    <dt><span class="m">n</span></dt><dd>subgroup size</dd>
+    <dt><span class="m">d_2,\ d_3</span></dt><dd>mean and standard deviation of the range of <span class="m">n</span> standard normal values</dd>
+  </dl>
+
+  <h3>X̄ and s chart</h3>
+  <div class="eq">\begin{aligned}
+\text{UCL}_{\bar{x}} &= \bar{\bar{x}} + A_3\bar{s} & \text{UCL}_s &= B_4\bar{s} \\
+\text{CL}_{\bar{x}} &= \bar{\bar{x}} & \text{CL}_s &= \bar{s} \\
+\text{LCL}_{\bar{x}} &= \bar{\bar{x}} - A_3\bar{s} & \text{LCL}_s &= B_3\bar{s}
+\end{aligned}</div>
+  <div class="eq">\hat\sigma = \frac{\bar{s}}{c_4}, \qquad A_3 = \frac{3}{c_4\sqrt{n}}, \qquad B_3,\ B_4 = 1 \mp \frac{3\sqrt{1-c_4^2}}{c_4}, \qquad c_4 = \sqrt{\frac{2}{n-1}}\;\frac{\Gamma(n/2)}{\Gamma\big((n-1)/2\big)}</div>
+  <dl class="where">
+    <dt><span class="m">\bar{s}</span></dt><dd>average subgroup standard deviation</dd>
+    <dt><span class="m">c_4</span></dt><dd>the ratio <span class="m">E[s]/\sigma</span> for samples of size <span class="m">n</span> from a normal population</dd>
+    <dt><span class="m">B_3</span></dt><dd>set to 0 when the formula gives a negative value</dd>
+  </dl>
+
+  <h3>Individuals and moving range chart</h3>
+  <div class="eq">\text{MR}_i = \left|x_i - x_{i-1}\right|, \qquad \overline{MR} = \frac{1}{m-1}\sum_{i=2}^{m}\text{MR}_i</div>
+  <div class="eq">\begin{aligned}
+\text{UCL}_x &= \bar{x} + 3\,\frac{\overline{MR}}{1.128} = \bar{x} + 2.66\,\overline{MR} & \text{UCL}_{MR} &= 3.267\,\overline{MR} \\
+\text{CL}_x &= \bar{x} & \text{CL}_{MR} &= \overline{MR} \\
+\text{LCL}_x &= \bar{x} - 2.66\,\overline{MR} & \text{LCL}_{MR} &= 0
+\end{aligned}</div>
+  <dl class="where">
+    <dt><span class="m">m</span></dt><dd>number of individual observations</dd>
+    <dt><span class="m">1.128,\ 3.267</span></dt><dd><span class="m">d_2</span> and <span class="m">D_4</span> for <span class="m">n = 2</span>, because each moving range spans two observations</dd>
+  </dl>
+</section>
+
+<section id="constants">
+  <h2>Control chart constants</h2>
+  <p>The constants depend only on the subgroup size. This table is computed in your browser from the distribution of the range of normal samples and from <span class="m">c_4</span>, and it agrees with the published tables apart from an occasional difference of one in the last decimal, which comes from rounding.</p>
+  <figure class="fig" id="fig-constants">
+    <div class="fig-head"><h3 class="fig-title">Constants for subgroups of 2 to 25</h3></div>
+    <div class="const-pick">
+      <label class="control" for="const-n"><span class="control-label">Highlight subgroup size n</span></label>
+      <input type="number" id="const-n" min="2" max="25" step="1" value="5" inputmode="numeric">
+    </div>
+    <div id="const-readouts"></div>
+    <div class="table-wrap" id="const-table"></div>
+    <figcaption>Type a subgroup size to highlight its row. The readouts turn the highlighted row into limits you can apply directly. <span class="m">D_3</span> and <span class="m">B_3</span> are 0 for small subgroups, where the lower limit would otherwise fall below zero.</figcaption>
+  </figure>
+</section>
+
+<section id="attributes">
+  <h2>Attributes charts</h2>
+  <p class="fig-note">Explained in <a href="../modules/05-attributes.html">module 5, charts for defects and defectives</a>.</p>
+  <div class="table-scroll">
+    <table class="ref">
+      <thead><tr><th>Chart</th><th>Plots</th><th>Center line</th><th>Control limits</th></tr></thead>
+      <tbody>
+        <tr><td>p</td><td>fraction defective <span class="m">p_i = d_i/n_i</span></td><td><span class="m">\bar{p} = \sum d_i / \sum n_i</span></td><td><span class="m">\bar{p} \pm 3\sqrt{\bar{p}(1-\bar{p})/n_i}</span></td></tr>
+        <tr><td>np</td><td>number defective <span class="m">d_i</span>, constant <span class="m">n</span></td><td><span class="m">n\bar{p}</span></td><td><span class="m">n\bar{p} \pm 3\sqrt{n\bar{p}(1-\bar{p})}</span></td></tr>
+        <tr><td>c</td><td>defects <span class="m">c_i</span> per unit of constant size</td><td><span class="m">\bar{c}</span></td><td><span class="m">\bar{c} \pm 3\sqrt{\bar{c}}</span></td></tr>
+        <tr><td>u</td><td>defects per unit <span class="m">u_i = c_i/n_i</span></td><td><span class="m">\bar{u} = \sum c_i / \sum n_i</span></td><td><span class="m">\bar{u} \pm 3\sqrt{\bar{u}/n_i}</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>A negative lower limit is set to 0. The p and np charts rest on the binomial distribution, the c and u charts on the Poisson distribution. When the sample size <span class="m">n_i</span> changes, the p and u limits change with it.</p>
+</section>
+
+<section id="run-rules">
+  <h2>Western Electric run rules</h2>
+  <p class="fig-note">Explained in <a href="../modules/02-control-charts.html#run-rules">module 2, how control charts work</a>.</p>
+  <p>The zones split each side of the center line into thirds: zone C lies within 1σ of the center line, zone B between 1σ and 2σ, and zone A between 2σ and 3σ. Here σ is the standard deviation of the plotted statistic. A point completes a signal when any of these patterns appears.</p>
+  <ol id="weco-list"></ol>
+  <p>Two trend rules are often added:</p>
+  <ol id="weco-trend" start="5"></ol>
+  <p>Every extra rule shortens the time to detect a shift and also adds false alarms, so the in-control average run length falls as rules are added.</p>
+</section>
+
+<section id="arl">
+  <h2>Average run length of a 3σ chart</h2>
+  <p class="fig-note">Explained in <a href="../modules/02-control-charts.html">module 2, how control charts work</a>.</p>
+  <div class="eq">\text{ARL} = \frac{1}{p}, \qquad p = \Phi(-3 - \delta) + 1 - \Phi(3 - \delta)</div>
+  <dl class="where">
+    <dt><span class="m">p</span></dt><dd>probability that one point falls outside the limits</dd>
+    <dt><span class="m">\delta</span></dt><dd>shift in the mean, in standard deviations of the plotted statistic</dd>
+    <dt><span class="m">\Phi</span></dt><dd>standard normal cumulative distribution function</dd>
+  </dl>
+  <p>An X̄ chart with subgroups of <span class="m">n</span> sees a process shift of <span class="m">k\sigma</span> as a shift of <span class="m">k\sqrt{n}</span> standard deviations of the subgroup mean, which is why larger subgroups catch shifts sooner. The table uses rule 1 only.</p>
+  <div class="table-wrap" id="arl-table"></div>
+</section>
+
+<section id="cusum">
+  <h2>CUSUM</h2>
+  <p class="fig-note">Explained in <a href="../modules/06-cusum.html">module 6, CUSUM charts</a>.</p>
+  <h3>Tabular CUSUM</h3>
+  <div class="eq">\begin{aligned}
+S_{hi}(i) &= \max\left(0,\ S_{hi}(i-1) + x_i - \hat\mu_0 - k\right) \\
+S_{lo}(i) &= \max\left(0,\ S_{lo}(i-1) + \hat\mu_0 - k - x_i\right)
+\end{aligned}</div>
+  <p>Both sums start at 0. The process is out of control when <span class="m">S_{hi}(i) &gt; h</span> or <span class="m">S_{lo}(i) &gt; h</span>.</p>
+  <dl class="where">
+    <dt><span class="m">\hat\mu_0</span></dt><dd>target or in-control mean</dd>
+    <dt><span class="m">k</span></dt><dd>reference value, usually half the shift to detect</dd>
+    <dt><span class="m">h</span></dt><dd>decision interval, often 4σ or 5σ</dd>
+  </dl>
+  <h3>V-mask design</h3>
+  <div class="eq">S_m = \sum_{i=1}^{m}\left(\bar{x}_i - \hat\mu_0\right)</div>
+  <div class="eq">k = \frac{\delta\sigma}{2}, \qquad d = \frac{2}{\delta^2}\ln\!\left(\frac{1-\beta}{\alpha}\right), \qquad h = d\,k</div>
+  <dl class="where">
+    <dt><span class="m">\delta</span></dt><dd>shift to detect, in standard deviations of the plotted values</dd>
+    <dt><span class="m">\alpha</span></dt><dd>probability of a false alarm</dd>
+    <dt><span class="m">\beta</span></dt><dd>probability of missing a shift of size <span class="m">\delta</span></dd>
+    <dt><span class="m">d</span></dt><dd>lead distance: how far ahead of the latest point the mask's vertex sits</dd>
+    <dt><span class="m">k,\ h</span></dt><dd>slope of the mask's arms per sample, and their rise above the vertex line at the latest point</dd>
+  </dl>
+</section>
+
+<section id="ewma">
+  <h2>EWMA</h2>
+  <p class="fig-note">Explained in <a href="../modules/07-ewma.html">module 7, EWMA charts</a>.</p>
+  <div class="eq">z_t = \lambda x_t + (1-\lambda)\,z_{t-1}, \qquad z_0 = \mu_0</div>
+  <div class="eq">\text{UCL}_t,\ \text{LCL}_t = \mu_0 \pm L\sigma\sqrt{\frac{\lambda}{2-\lambda}\left[1-(1-\lambda)^{2t}\right]}</div>
+  <div class="eq">\text{as } t \to \infty: \quad \mu_0 \pm L\sigma\sqrt{\frac{\lambda}{2-\lambda}}</div>
+  <dl class="where">
+    <dt><span class="m">\lambda</span></dt><dd>smoothing constant, <span class="m">0 &lt; \lambda \le 1</span>; values of 0.2 to 0.3 are common, and <span class="m">\lambda = 1</span> gives a Shewhart chart</dd>
+    <dt><span class="m">L</span></dt><dd>limit width, usually 3 (the handbook writes <span class="m">k</span>)</dd>
+    <dt><span class="m">\sigma</span></dt><dd>standard deviation of the plotted observations</dd>
+  </dl>
+  <p>The exact limits start narrow and widen toward the steady-state width within a few points. The handbook's example uses the steady-state limits throughout.</p>
+</section>
+
+<section id="capability">
+  <h2>Capability indices</h2>
+  <p class="fig-note">Explained in <a href="../modules/08-capability.html">module 8, process capability</a>.</p>
+  <div class="eq">\begin{aligned}
+C_p &= \frac{USL - LSL}{6\sigma} & C_{pk} &= \min\left(C_{pu},\ C_{pl}\right) \\
+C_{pu} &= \frac{USL - \mu}{3\sigma} & C_{pl} &= \frac{\mu - LSL}{3\sigma}
+\end{aligned}</div>
+  <div class="eq">C_{pm} = \frac{USL - LSL}{6\sqrt{\sigma^2 + (\mu - T)^2}}</div>
+  <dl class="where">
+    <dt><span class="m">USL,\ LSL</span></dt><dd>upper and lower specification limits</dd>
+    <dt><span class="m">\mu,\ \sigma</span></dt><dd>process mean and standard deviation, estimated by <span class="m">\bar{x}</span> and <span class="m">s</span> (or <span class="m">\hat\sigma</span> from a control chart) once the process is stable</dd>
+    <dt><span class="m">T</span></dt><dd>target value</dd>
+  </dl>
+  <p>With a one-sided specification, use <span class="m">C_{pu}</span> or <span class="m">C_{pl}</span> alone.</p>
+</section>
+
+<section id="acceptance">
+  <h2>Acceptance sampling</h2>
+  <p class="fig-note">Explained in <a href="../modules/09-acceptance-sampling.html">module 9, lot acceptance sampling</a>.</p>
+  <h3>Single sampling plan (n, c)</h3>
+  <div class="eq">P_a = \sum_{d=0}^{c}\binom{n}{d}\,p^d\,(1-p)^{n-d}</div>
+  <div class="eq">\text{AOQ} = \frac{P_a\,p\,(N-n)}{N}, \qquad \text{AOQL} = \max_{p}\ \text{AOQ}, \qquad \text{ATI} = n + (1-P_a)(N-n)</div>
+  <dl class="where">
+    <dt><span class="m">N,\ n,\ c</span></dt><dd>lot size, sample size and acceptance number</dd>
+    <dt><span class="m">p</span></dt><dd>fraction defective in the incoming lots</dd>
+    <dt><span class="m">P_a</span></dt><dd>probability of accepting a lot; plotted against <span class="m">p</span> it is the OC curve</dd>
+  </dl>
+  <p>AOQ and ATI assume that rejected lots are inspected 100% and that every defective found is replaced with a good item.</p>
+  <h3>Double sampling plan</h3>
+  <div class="eq">P_a = P(d_1 \le c_1) + \sum_{d_1 = c_1 + 1}^{r_1 - 1} P(d_1)\,P(d_2 \le c_2 - d_1)</div>
+  <div class="eq">\text{ASN} = n_1 P_1 + (n_1 + n_2)(1 - P_1) = n_1 + n_2(1 - P_1)</div>
+  <dl class="where">
+    <dt><span class="m">c_1,\ r_1</span></dt><dd>accept on the first sample if <span class="m">d_1 \le c_1</span>, reject if <span class="m">d_1 \ge r_1</span>, otherwise take the second sample</dd>
+    <dt><span class="m">c_2</span></dt><dd>accept after the second sample if <span class="m">d_1 + d_2 \le c_2</span></dd>
+    <dt><span class="m">P_1</span></dt><dd>probability of reaching a decision on the first sample</dd>
+  </dl>
+</section>
+
+<section id="multivariate">
+  <h2>Hotelling T²</h2>
+  <p class="fig-note">Explained in <a href="../modules/10-multivariate.html">module 10, multivariate control charts</a>.</p>
+  <div class="eq">T_j^2 = n\,\left(\bar{\mathbf{x}}_j - \bar{\bar{\mathbf{x}}}\right)^{\top}\mathbf{S}_p^{-1}\left(\bar{\mathbf{x}}_j - \bar{\bar{\mathbf{x}}}\right)</div>
+  <div class="eq">\begin{aligned}
+\text{Phase I: } \text{UCL} &= \frac{p(k-1)(n-1)}{kn - k - p + 1}\,F_{\alpha;\,p,\,kn-k-p+1} \\
+\text{Phase II: } \text{UCL} &= \frac{p(k+1)(n-1)}{kn - k - p + 1}\,F_{\alpha;\,p,\,kn-k-p+1}
+\end{aligned}</div>
+  <dl class="where">
+    <dt><span class="m">\bar{\mathbf{x}}_j</span></dt><dd>vector of the <span class="m">p</span> variable means in subgroup <span class="m">j</span></dd>
+    <dt><span class="m">\bar{\bar{\mathbf{x}}}</span></dt><dd>vector of grand means</dd>
+    <dt><span class="m">\mathbf{S}_p</span></dt><dd>pooled covariance matrix, the average of the subgroup covariance matrices</dd>
+    <dt><span class="m">p,\ k,\ n</span></dt><dd>number of variables, number of Phase I subgroups, subgroup size</dd>
+    <dt><span class="m">F_{\alpha;\,\nu_1,\,\nu_2}</span></dt><dd>upper <span class="m">\alpha</span> point of the F distribution</dd>
+  </dl>
+  <p>The T² chart has no lower limit, because T² measures distance and cannot be negative.</p>
+</section>
+
+<section id="smoothing">
+  <h2>Exponential smoothing</h2>
+  <p class="fig-note">Explained in <a href="../modules/11-time-series.html">module 11, time series and forecasting</a>.</p>
+  <h3>Single exponential smoothing</h3>
+  <div class="eq">S_t = \alpha\,y_{t-1} + (1-\alpha)\,S_{t-1}, \qquad 0 &lt; \alpha \le 1, \qquad S_2 = y_1</div>
+  <p>In the handbook's convention <span class="m">S_t</span> uses data up to period <span class="m">t-1</span>, so it is the forecast for period <span class="m">t</span>.</p>
+  <h3>Double exponential smoothing</h3>
+  <div class="eq">\begin{aligned}
+S_t &= \alpha\,y_t + (1-\alpha)\left(S_{t-1} + b_{t-1}\right) \\
+b_t &= \gamma\left(S_t - S_{t-1}\right) + (1-\gamma)\,b_{t-1} \\
+F_{t+m} &= S_t + m\,b_t
+\end{aligned}</div>
+  <dl class="where">
+    <dt><span class="m">S_t,\ b_t</span></dt><dd>smoothed level and smoothed trend at period <span class="m">t</span>; start with <span class="m">S_1 = y_1</span> and <span class="m">b_1 = y_2 - y_1</span></dd>
+    <dt><span class="m">\alpha,\ \gamma</span></dt><dd>smoothing constants for the level and the trend, each between 0 and 1</dd>
+    <dt><span class="m">F_{t+m}</span></dt><dd>forecast <span class="m">m</span> periods ahead</dd>
+  </dl>
+</section>
+
+</main>
+</div>
+</body>
+</html>

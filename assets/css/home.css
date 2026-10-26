@@ -1,0 +1,74 @@
+/* Home page: hero with a live control chart, then the course map. */
+
+.home > * { max-width: var(--wide); }
+.home section + section { margin-top: 5rem; }
+
+.hero { display: grid; gap: 1.25rem; max-width: 46rem; padding-top: clamp(0.5rem, 3vw, 2.5rem); }
+.hero h1 {
+  font-size: clamp(2.6rem, 1.4rem + 5vw, 4.9rem);
+  font-weight: 660;
+  font-stretch: 122%;
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+}
+.hero .lede { font-size: clamp(1.1rem, 1rem + 0.4vw, 1.3rem); max-width: 38rem; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.4rem; }
+
+.hero-fig { margin-top: clamp(2.25rem, 5vw, 3.5rem); }
+.hero-fig-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem 1rem; }
+.hero-fig-head .fig-num { color: var(--signal); }
+.hero-fig-head .fig-num::before { content: ""; display: inline-block; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--signal); margin-right: 0.45rem; vertical-align: 0.08em; animation: pulse 1.6s ease-in-out infinite; }
+.hero-fig.is-paused .fig-num::before { animation: none; opacity: 0.4; }
+@keyframes pulse { 50% { opacity: 0.25; } }
+.hero-fig-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem 1.5rem; }
+.hero-fig-foot .fig-note { min-height: 1.3em; }
+.hero-fig-foot .fig-note.is-signal { color: var(--signal); font-weight: 560; }
+
+.section-head { display: grid; gap: 0.6rem; max-width: var(--measure); margin-bottom: 1.75rem; }
+.section-head p { color: var(--ink-2); }
+
+.parts { display: grid; gap: 2.5rem; }
+.part { display: grid; gap: 0.9rem; }
+.part-head { display: flex; align-items: baseline; gap: 0.9rem; }
+.part-head h3 { font-size: 1.05rem; }
+.part-head .eyebrow { min-width: 4.5rem; }
+.cards { display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17.5rem), 1fr)); }
+.card {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 0.55rem;
+  padding: 1.1rem 1.15rem 1rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  color: var(--ink);
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card:hover { border-color: var(--rule); box-shadow: var(--shadow); transform: translateY(-1px); color: var(--ink); text-decoration: none; }
+.card .glyph { width: 100%; max-width: 13rem; aspect-ratio: 16 / 9; margin-bottom: 0.25rem; }
+.card .card-n { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.06em; }
+.card h4 { font-family: var(--font-display); font-size: 1.12rem; font-weight: 620; font-stretch: 108%; line-height: 1.25; }
+.card p { font-size: 0.9rem; line-height: 1.5; color: var(--ink-2); }
+.card-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding-top: 0.6rem; margin-top: 0.2rem; border-top: 1px solid var(--hair); font-size: 0.78rem; color: var(--muted); }
+.card-status { display: inline-flex; align-items: center; gap: 0.4rem; }
+.card-status.is-done { color: var(--good); }
+.card.capstone { background: linear-gradient(var(--surface), var(--surface)) padding-box; }
+@media (min-width: 900px) {
+  .card.capstone { grid-template-columns: 15rem minmax(0, 1fr); grid-template-rows: auto auto 1fr auto; column-gap: 1.5rem; }
+  .card.capstone .glyph { grid-row: 1 / -1; max-width: none; align-self: center; }
+}
+.cards.single { grid-template-columns: 1fr; }
+
+.how-grid { display: grid; gap: 1.5rem 2rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); }
+.how-grid > div { display: grid; gap: 0.4rem; align-content: start; padding-top: 1rem; border-top: 2px solid var(--ink); }
+.how-grid p { font-size: 0.95rem; color: var(--ink-2); }
+
+.source-card { display: grid; gap: 1rem; padding: clamp(1.25rem, 3vw, 2rem); border-radius: var(--radius); background: var(--surface-2); max-width: var(--wide); }
+.source-card h2 { font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.55rem); margin-top: 0.35rem; }
+.source-card p { color: var(--ink-2); max-width: var(--measure); }
+.home section > * { max-width: var(--wide); }
+.home .section-head { max-width: var(--measure); }
+
+.home .map { margin-top: 4.5rem; }

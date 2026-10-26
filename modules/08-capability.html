@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en" class="math-pending">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Process capability · In Control</title>
+<meta name="description" content="Cp, Cpk and Cpm: how the spread of a stable process compares with its specification, how uncertain the estimates are, and what to do when the data are not normal.">
+<script>try{var t=localStorage.getItem('in-control:theme');if(t&&t!=='system')document.documentElement.dataset.theme=t}catch(e){}setTimeout(function(){document.documentElement.classList.remove('math-pending')},3000)</script>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="Process capability · In Control">
+<meta property="og:description" content="Cp, Cpk and Cpm: how the spread of a stable process compares with its specification, how uncertain the estimates are, and what to do when the data are not normal.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap">
+<link rel="stylesheet" href="../assets/css/course.css">
+<style>
+  /* labels for the width brackets in the capability explorer */
+  .ch .k-data-label { fill: var(--data); font-weight: 600; }
+  .ch .k-bracket-data { stroke: var(--data); stroke-width: 1.5; }
+  .ch .k-bracket-spec { stroke: var(--spec); stroke-width: 1.5; }
+  .ch .k-true-curve { fill: none; stroke: var(--alt); stroke-width: 1.5; stroke-dasharray: 4 3; }
+</style>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script type="module" src="../assets/js/course.js"></script>
+<script type="module" src="../assets/js/modules/08-capability.js"></script>
+</head>
+<body data-module="8">
+<div class="shell">
+<nav class="rail" id="rail"></nav>
+<main class="page" id="main">
+
+<header class="module-head">
+  <h1>Process capability</h1>
+  <p class="lede">A process can be perfectly stable and still make parts the customer cannot use. Capability indices compare the natural spread of a stable process with the width of its specification, and turn that comparison into a number you can track and negotiate over.</p>
+</header>
+
+<section id="two-widths">
+  <h2>Capability compares two widths</h2>
+  <p>Module 1 separated two voices. Control limits are the voice of the process and come from its data. Specification limits are the voice of the customer and come from the drawing or the contract. A control chart tells you whether the process is stable. Capability analysis asks the next question. Given that it is stable, does it fit inside the specification?</p>
+  <p>For a stable process whose output is normally distributed, 99.73% of all values fall within <span class="m">\mu \pm 3\sigma</span>. That band is <span class="m">6\sigma</span> wide, and it is called the natural tolerance of the process. The specification is <span class="m">\text{USL} - \text{LSL}</span> wide. The simplest capability index is the ratio of the two widths.</p>
+  <div class="eq">C_p = \frac{\text{USL} - \text{LSL}}{6\sigma}</div>
+  <dl class="where">
+    <dt><span class="m">\text{USL}, \text{LSL}</span></dt><dd>upper and lower specification limits</dd>
+    <dt><span class="m">\sigma</span></dt><dd>standard deviation of the process, estimated by <span class="m">s</span> from data collected while the process was in control</dd>
+  </dl>
+  <p>When <span class="m">C_p = 1</span>, the natural spread exactly fills the specification. When <span class="m">C_p = 2</span>, the process uses half of it. Below 1, some product falls outside the limits even when nothing goes wrong.</p>
+
+  <figure class="fig" id="fig-explorer">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Capability explorer for a filling line</h3></div>
+    <div class="controls">
+      <label class="control" for="cap-mean">
+        <span class="control-label">Process mean <output for="cap-mean"></output></span>
+        <input type="range" id="cap-mean" min="496" max="504" step="0.1" value="500">
+      </label>
+      <label class="control" for="cap-sigma">
+        <span class="control-label">Process σ <output for="cap-sigma"></output></span>
+        <input type="range" id="cap-sigma" min="0.4" max="2.5" step="0.05" value="1">
+      </label>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn ghost" id="cap-reset" type="button">Reset</button>
+      </div>
+    </div>
+    <div class="fig-chart" id="cap-chart"></div>
+    <ul class="legend" id="cap-legend"></ul>
+    <div id="cap-readouts"></div>
+    <figcaption>The bottles from module 1, with a 496 to 504&nbsp;mL specification and a 500&nbsp;mL target. Drag the amber LSL and USL lines, or move the sliders. The two brackets show the specification width and the <span class="m">6\sigma</span> natural spread, and <span class="m">C_p</span> is their ratio. Push the mean toward a limit and watch <span class="m">C_p</span> stay put while <span class="m">C_{pk}</span>, <span class="m">C_{pm}</span> and the red tail respond.</figcaption>
+  </figure>
+
+  <div class="key-idea">
+    <span class="eyebrow">Key idea</span>
+    <p>Capability only has a meaning for a process in statistical control. An unstable process has no single mean or standard deviation, so any index computed from its data describes a mixture of past states and predicts nothing about the next lot. Chart first, then measure capability.</p>
+  </div>
+
+  <div class="check" id="m8-q1">
+    <p class="check-q">An engineer collects 120 shaft diameters over a week to report <span class="m">C_{pk}</span>. The X̄ chart for the same week shows a clear shift on Wednesday afternoon. What should she do?</p>
+    <ul class="check-options">
+      <li data-why="An index computed across the shift blends two different processes. It describes neither of them and predicts nothing.">Report the index anyway, since 120 values is a large sample</li>
+      <li data-why="Out-of-spec parts are not the problem here. The process itself changed, and dropping values only hides that.">Delete the diameters that fall outside the specification and recompute</li>
+      <li data-correct>Find and remove the cause of the shift, then estimate capability from data collected while the process is stable</li>
+      <li data-why="More data from an unstable process gives a more precise estimate of something that does not exist.">Collect another week of data so the shift averages out</li>
+    </ul>
+    <div class="check-explain"><p>Capability is a property of a stable process. The shift is a special cause, so the first job is to find and remove it. Once the chart shows control, data from that period describe one process, and its capability can be estimated.</p></div>
+  </div>
+</section>
+
+<section id="centering">
+  <h2>Off-center processes and C<sub>pk</sub></h2>
+  <p><span class="m">C_p</span> only compares widths. It says nothing about where the process sits. A process with <span class="m">C_p = 2</span> centered on the USL would put half its output above the limit. To account for location, measure the distance from the mean to each limit in units of <span class="m">3\sigma</span>, and keep the smaller one.</p>
+  <div class="eq">\begin{aligned} C_{pu} &amp;= \frac{\text{USL} - \mu}{3\sigma} \qquad C_{pl} = \frac{\mu - \text{LSL}}{3\sigma} \\[4pt] C_{pk} &amp;= \min\left(C_{pu},\, C_{pl}\right) \end{aligned}</div>
+  <p>When the process is centered, <span class="m">C_{pu} = C_{pl} = C_p</span>. As it moves off center, <span class="m">C_{pk}</span> falls in proportion to the distance. The handbook writes this with the scaled distance <span class="m">k</span> between the mean and the midpoint <span class="m">m</span> of the specification.</p>
+  <div class="eq">k = \frac{|m - \mu|}{(\text{USL} - \text{LSL})/2}, \qquad C_{pk} = C_p\,(1 - k)</div>
+  <p>Because <span class="m">0 \le k \le 1</span> while the mean is inside the limits, <span class="m">C_{pk}</span> can never exceed <span class="m">C_p</span>. If a characteristic has only one limit, such as a maximum impurity, only <span class="m">C_{pu}</span> or <span class="m">C_{pl}</span> applies.</p>
+
+  <div class="check" id="m8-q2" data-answer="0.667" data-tolerance="0.005">
+    <p class="check-q">The handbook's worked example has LSL = 8, USL = 20, a sample standard deviation <span class="m">s = 2</span> and a sample mean <span class="m">\bar{x} = 16</span>. Compute <span class="m">\hat{C}_{pk}</span> to three decimals.</p>
+    <div class="check-explain"><p><span class="m">\hat{C}_p = 12/(6 \times 2) = 1.0</span>. The midpoint is 14, so <span class="m">k = |14 - 16|/6 = 0.333</span> and <span class="m">\hat{C}_{pk} = 1.0 \times (1 - 0.333) = 0.667</span>. Directly, <span class="m">\hat{C}_{pu} = (20 - 16)/6 = 0.667</span> and <span class="m">\hat{C}_{pl} = (16 - 8)/6 = 1.333</span>, and the smaller one is 0.667.</p></div>
+  </div>
+
+  <figure class="fig" id="fig-center">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Same C<sub>p</sub>, different C<sub>pk</sub></h3></div>
+    <div class="controls">
+      <label class="control" for="ctr-mean">
+        <span class="control-label">Process mean <output for="ctr-mean"></output></span>
+        <input type="range" id="ctr-mean" min="8" max="20" step="0.1" value="16">
+      </label>
+      <div class="control">
+        <span class="control-label">Process σ</span>
+        <div class="seg" id="ctr-sigma"><button data-value="2" aria-pressed="true">2.0</button><button data-value="1.5">1.5</button><button data-value="1">1.0</button></div>
+      </div>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn" id="ctr-handbook" type="button">Handbook example</button>
+      </div>
+    </div>
+    <div class="fig-split even">
+      <div class="fig-chart" id="ctr-dist"></div>
+      <div class="fig-chart" id="ctr-index"></div>
+    </div>
+    <ul class="legend" id="ctr-legend"></ul>
+    <div class="eq" id="ctr-eq">C_{pk} = C_p(1-k)</div>
+    <div id="ctr-readouts"></div>
+    <figcaption>The specification is the handbook's, 8 to 20, with the target at the midpoint, 14. The figure opens on the handbook example. Left: the process and its distance from the midpoint. Right: each index as the mean slides across the specification, with the current mean marked. <span class="m">C_p</span> is flat, and <span class="m">C_{pk}</span> is a tent that peaks only at the midpoint. <span class="m">C_{pm}</span> is rounded at the target and then drops quickly. With σ at 1.0, <span class="m">C_{pm}</span> falls below <span class="m">C_{pk}</span> once the mean is about 0.4 off target, because it charges for distance from target even when every part is far inside the limits.</figcaption>
+  </figure>
+
+  <div class="from-nist">
+    <span class="eyebrow">Handbook 6.1.6</span>
+    <p>In the <a href="https://www.itl.nist.gov/div898/handbook/pmc/section1/pmc16.htm" target="_blank" rel="noopener">worked example</a>, <span class="m">C_p = 1.0</span> says the process would just fit if it were centered at 14. With the mean at 16, <span class="m">C_{pk} = 0.667</span> falls short of 1.0, and the handbook concludes that the process should be recentered and its variation reduced.</p>
+  </div>
+
+  <p>Neither <span class="m">C_p</span> nor <span class="m">C_{pk}</span> knows about the target value <span class="m">T</span>. A process can sit near one limit, far from target, and still have a respectable <span class="m">C_{pk}</span> if its spread is small. The index <span class="m">C_{pm}</span> charges for distance from target by adding it to the variance.</p>
+  <div class="eq">C_{pm} = \frac{\text{USL} - \text{LSL}}{6\sqrt{\sigma^2 + (\mu - T)^2}}</div>
+  <p>When the process is on target, <span class="m">C_{pm} = C_p</span>. In the handbook example, with <span class="m">T = 14</span>, <span class="m">C_{pm} = 12 / (6\sqrt{4 + 4}) = 0.707</span>.</p>
+</section>
+
+<section id="defect-rates">
+  <h2>From an index to a defect rate</h2>
+  <p>Under the normal model, each index translates into a fraction of product outside the specification. For a centered process the fraction is <span class="m">2\,\Phi(-3C_p)</span>, where <span class="m">\Phi</span> is the standard normal cumulative distribution. The handbook tabulates four common values.</p>
+  <div class="table-scroll">
+    <table class="ref">
+      <thead><tr><th class="num">Spec width</th><th class="num">C<sub>p</sub></th><th class="num">Outside spec, centered</th><th class="num">Handbook prints</th><th class="num">Spec used by 6σ</th></tr></thead>
+      <tbody>
+        <tr><td class="num">6σ</td><td class="num">1.00</td><td class="num">0.27%</td><td class="num">0.27%</td><td class="num">100%</td></tr>
+        <tr><td class="num">8σ</td><td class="num">1.33</td><td class="num">63 ppm</td><td class="num">64 ppm</td><td class="num">75%</td></tr>
+        <tr><td class="num">10σ</td><td class="num">1.67</td><td class="num">0.57 ppm</td><td class="num">0.6 ppm</td><td class="num">60%</td></tr>
+        <tr><td class="num">12σ</td><td class="num">2.00</td><td class="num">2.0 ppb</td><td class="num">2 ppb</td><td class="num">50%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The "Outside spec" column is recomputed from the normal distribution. The handbook rounds the exact 63.3&nbsp;ppm up to 64 and writes the 10σ index as 1.66. Many customers, for example in automotive supply chains, ask for <span class="m">C_{pk} \ge 1.33</span> on an established process, which leaves a full <span class="m">\sigma</span> of room between the natural spread and each limit.</p>
+  <p>An off-center process needs each side separately. The fraction above the USL is <span class="m">\Phi(-3C_{pu})</span> and the fraction below the LSL is <span class="m">\Phi(-3C_{pl})</span>. In the handbook example, <span class="m">C_{pu} = 0.667</span> puts <span class="m">\Phi(-2) = 2.28\%</span> above 20, while <span class="m">C_{pl} = 1.333</span> puts only 32&nbsp;ppm below 8.</p>
+  <div class="pitfall">
+    <span class="eyebrow">Common mistake</span>
+    <p>Quoting parts per million from a capability index assumes the normal curve holds far out in the tails, where you have the least data. A modest skew that is invisible in a histogram can change the tail fraction tenfold. Section 8.6 shows how much.</p>
+  </div>
+
+  <div class="check" id="m8-q3">
+    <p class="check-q">A stable, centered process has <span class="m">C_p = C_{pk} = 1.33</span> and normally distributed output. About what fraction of its output falls outside the specification?</p>
+    <ul class="check-options">
+      <li data-why="That is the rate for Cp = 1.00, where the limits sit at ±3σ.">0.27%</li>
+      <li data-why="That is the rate for Cp of about 1.67, where the limits sit at ±5σ.">About 0.6 ppm</li>
+      <li data-why="The normal curve has no end. Some output always falls outside any finite limits.">None at all</li>
+      <li data-correct>About 63 ppm</li>
+    </ul>
+    <div class="check-explain"><p><span class="m">C_p = 1.33</span> puts each limit <span class="m">3 \times 1.33 = 4</span> standard deviations from the mean. The two tails beyond <span class="m">\pm 4\sigma</span> hold <span class="m">2\,\Phi(-4) = 0.0000633</span>, about 63&nbsp;ppm. The handbook rounds this to 64&nbsp;ppm.</p></div>
+  </div>
+</section>
+
+<section id="uncertainty">
+  <h2>Estimates come with uncertainty</h2>
+  <p>In practice you never know <span class="m">\mu</span> and <span class="m">\sigma</span>. You plug in <span class="m">\bar{x}</span> and <span class="m">s</span> and get estimates, written <span class="m">\hat{C}_p</span> and <span class="m">\hat{C}_{pk}</span>. Both move from sample to sample, and the movement is larger than most people expect. The handbook asks for about 50 independent values before treating an estimate as valid at all, and recommends at least 100 for a capability study.</p>
+  <p>For <span class="m">C_p</span>, the chi-square distribution of <span class="m">s^2</span> gives an exact confidence interval. With <span class="m">\nu = n - 1</span> degrees of freedom and confidence <span class="m">1 - \alpha</span>:</p>
+  <div class="eq">\hat{C}_p\sqrt{\frac{\chi^2_{\alpha/2,\,\nu}}{\nu}} \;\le\; C_p \;\le\; \hat{C}_p\sqrt{\frac{\chi^2_{1-\alpha/2,\,\nu}}{\nu}}</div>
+  <p>For <span class="m">C_{pk}</span> no exact interval exists. The handbook gives a normal approximation, intended for <span class="m">n \ge 25</span>:</p>
+  <div class="eq">\hat{C}_{pk} \pm z_{1-\alpha/2}\sqrt{\frac{1}{9n} + \frac{\hat{C}_{pk}^2}{2(n-1)}}</div>
+  <p>With 100 measurements and an estimate of 1.33, the 95% interval for <span class="m">C_p</span> runs from 1.14 to 1.51, and for <span class="m">C_{pk}</span> from 1.13 to 1.53. A study that size can separate 1.33 from 1.0. It cannot separate 1.33 from 1.2.</p>
+
+  <figure class="fig" id="fig-sampling">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Four hundred capability studies of the same process</h3></div>
+    <div class="controls">
+      <label class="control" for="smp-n">
+        <span class="control-label">Measurements per study <output for="smp-n"></output></span>
+        <input type="range" id="smp-n" min="10" max="300" step="5" value="30">
+      </label>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn" id="smp-new" type="button">Run 400 new studies</button>
+      </div>
+    </div>
+    <div class="fig-chart" id="smp-chart"></div>
+    <ul class="legend" id="smp-legend"></ul>
+    <div id="smp-readouts"></div>
+    <figcaption>The true process has mean 10, σ = 1 and limits 6 and 14, so its true <span class="m">C_{pk}</span> is 1.33. Each study measures <span class="m">n</span> parts and reports <span class="m">\hat{C}_{pk}</span>; the histogram collects 400 such reports. The shaded band is the approximate 95% interval from the formula above. Start at 30 parts, where one or two studies in a hundred call this good process incapable, then slide toward 300 and watch the spread shrink like <span class="m">1/\sqrt{n}</span>.</figcaption>
+  </figure>
+
+  <div class="check" id="m8-q4">
+    <p class="check-q">A supplier sends <span class="m">\hat{C}_{pk} = 1.40</span> from a study of 30 parts. Your purchase agreement requires <span class="m">C_{pk} \ge 1.33</span>. What can you conclude?</p>
+    <ul class="check-options">
+      <li data-why="The point estimate is above 1.33, but with 30 parts the true value could easily be well below it.">The requirement is met, because 1.40 is above 1.33</li>
+      <li data-correct>The approximate 95% interval runs from about 1.02 to 1.78, so the data cannot show the requirement is met</li>
+      <li data-why="The approximation in the handbook is intended for n of 25 or more, so 30 parts is enough to compute an interval. It is just a wide one.">Nothing, because Cpk cannot be estimated from fewer than 100 parts</li>
+    </ul>
+    <div class="check-explain"><p>The half-width is <span class="m">1.96\sqrt{1/270 + 1.96/58} = 0.38</span>, so the interval is about 1.02 to 1.78. Values below 1.33 are entirely plausible. Ask for a larger study, or for the lower confidence bound, before accepting the claim.</p></div>
+  </div>
+</section>
+
+<section id="normality">
+  <h2>Checking for normality</h2>
+  <p>Every formula so far assumes the output follows a normal distribution, and the defect rates lean on that assumption hardest. The normal curve is symmetric and bell-shaped, and its mean and standard deviation fix it completely. About 68.27% of values fall within <span class="m">\pm 1\sigma</span> of the mean, 95.45% within <span class="m">\pm 2\sigma</span> and 99.73% within <span class="m">\pm 3\sigma</span>. No real process is exactly normal. The practical question is whether the data are close enough in the tails, where the specification limits sit.</p>
+  <p>A histogram of 100 values is too lumpy to answer that. The standard tool is the <strong>normal probability plot</strong>. Sort the data, and plot each value against the z-score you would expect for a value of that rank in a normal sample. If the data are normal, the points follow a straight line whose intercept estimates the mean and whose slope estimates the standard deviation. Departures show up as shapes.</p>
+  <ul>
+    <li>A curve that bends upward at the right end means a long right tail (right skew). Bending downward at the left end means a long left tail.</li>
+    <li>An S-shape that steepens at both ends means heavier tails than normal. One that flattens at both ends means shorter tails.</li>
+    <li>A flat step or gap in the middle points to two populations mixed together, such as two machines or two shifts.</li>
+  </ul>
+
+  <figure class="fig" id="fig-normal">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">What normal and non-normal data look like</h3></div>
+    <div class="controls">
+      <div class="control">
+        <span class="control-label">Shape of the process</span>
+        <div class="seg" id="nrm-shape">
+          <button data-value="normal" aria-pressed="true">Normal</button>
+          <button data-value="skew">Skewed</button>
+          <button data-value="heavy">Heavy tails</button>
+          <button data-value="short">Short tails</button>
+          <button data-value="mix">Two streams</button>
+        </div>
+      </div>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn" id="nrm-new" type="button">New sample</button>
+      </div>
+    </div>
+    <div class="fig-split even">
+      <div class="fig-chart" id="nrm-hist"></div>
+      <div class="fig-chart" id="nrm-pp"></div>
+    </div>
+    <ul class="legend" id="nrm-legend"></ul>
+    <div id="nrm-readouts"></div>
+    <div class="state-panel" id="nrm-panel" aria-live="polite"><h4></h4><p class="desc"></p><p class="do"></p></div>
+    <figcaption>Each shape has mean 10 and standard deviation 1, and each sample has 100 values. Left: the histogram with the normal curve that has the same mean and standard deviation. Right: the normal probability plot with a least-squares reference line. The correlation of the plot measures straightness; for 100 truly normal values it falls below about 0.987 only 5% of the time (a cutoff found by simulation). Draw several normal samples first to learn how much a straight plot wobbles at its ends.</figcaption>
+  </figure>
+
+  <div class="check" id="m8-q5">
+    <p class="check-q">On a normal probability plot of 150 coating thicknesses, the middle points follow the line closely, but the largest ten values bend sharply upward above it. What does that suggest?</p>
+    <ul class="check-options">
+      <li data-correct>A long right tail, so normal theory will understate how much product exceeds the USL</li>
+      <li data-why="Heavy tails on both sides produce an S-shape that bends at both ends, not only at the right.">Heavier tails than normal on both sides</li>
+      <li data-why="Agreement in the middle is not enough. The specification limits sit in the tails, which is exactly where this plot departs from the line.">The data are normal, since most points follow the line</li>
+    </ul>
+    <div class="check-explain"><p>Values that sit above the line at the right end are larger than a normal distribution would produce for those ranks. That is right skew. Normal-theory <span class="m">C_{pu}</span> will look better than the process really is, which is the problem the next section addresses.</p></div>
+  </div>
+</section>
+
+<section id="non-normal">
+  <h2>When the data are not normal</h2>
+  <p>Some characteristics are skewed by nature. Thickness, flatness, impurity levels and cycle times have a hard floor and a long upper tail. When the probability plot bends, the handbook offers two remedies.</p>
+  <p><strong>Transform the data.</strong> The Box-Cox family of power transformations, defined for positive values, can often make skewed data close to normal.</p>
+  <div class="eq">x^{(\lambda)} = \begin{cases} \dfrac{x^{\lambda} - 1}{\lambda} &amp; \lambda \ne 0 \\[6pt] \ln x &amp; \lambda = 0 \end{cases}</div>
+  <p>The value <span class="m">\lambda = 1</span> leaves the shape unchanged, <span class="m">\lambda = 0.5</span> is close to a square root, <span class="m">\lambda = 0</span> is the log, and negative values pull in a long right tail harder still. Software picks the <span class="m">\lambda</span> that maximizes the normal likelihood of the transformed data. You then transform the specification limits with the same <span class="m">\lambda</span>, check that the probability plot is now straight, and compute the usual indices on the new scale. In the handbook's example, 42 microwave radiation readings give <span class="m">\hat\lambda \approx 0.3</span>. If the data contain zeros or negative values, add a constant first.</p>
+  <p><strong>Use percentiles instead of <span class="m">\sigma</span>.</strong> For a normal distribution, the 0.135th and 99.865th percentiles sit exactly <span class="m">3\sigma</span> below and above the mean. The nonparametric indices replace <span class="m">\pm 3\sigma</span> with those percentiles, written <span class="m">p(0.00135)</span> and <span class="m">p(0.99865)</span>, and replace the mean with the median.</p>
+  <div class="eq">\begin{aligned} C_{np} &amp;= \frac{\text{USL} - \text{LSL}}{p(0.99865) - p(0.00135)} \\[6pt] C_{npk} &amp;= \frac{\min\left(\text{USL} - \text{median},\ \text{median} - \text{LSL}\right)}{\left[p(0.99865) - p(0.00135)\right]/2} \end{aligned}</div>
+  <p>For normal data these equal <span class="m">C_p</span> and <span class="m">C_{pk}</span>. For skewed data they use the real width of the distribution. The price is data. Estimating a point that only 0.135% of values exceed needs hundreds or thousands of measurements.</p>
+
+  <figure class="fig" id="fig-skew">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">One mean, one σ, three answers</h3></div>
+    <div class="controls">
+      <label class="control" for="skw-g">
+        <span class="control-label">Skewness of the process <output for="skw-g"></output></span>
+        <input type="range" id="skw-g" min="0" max="1.2" step="0.05" value="0.8">
+      </label>
+      <div class="control">
+        <span class="control-label">Probability plot of</span>
+        <div class="seg" id="skw-view"><button data-value="raw" aria-pressed="true">Raw data</button><button data-value="bc">After Box-Cox</button></div>
+      </div>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn" id="skw-new" type="button">New sample</button>
+      </div>
+    </div>
+    <div class="fig-split even">
+      <div class="fig-chart" id="skw-hist"></div>
+      <div class="fig-chart" id="skw-pp"></div>
+    </div>
+    <ul class="legend" id="skw-legend"></ul>
+    <div id="skw-readouts"></div>
+    <figcaption>A coating line with limits of 6 and 14&nbsp;µm. Whatever the skewness, the process mean stays at 10&nbsp;µm and its standard deviation at 1&nbsp;µm, so the normal-theory <span class="m">C_{pk}</span> hovers near 1.33. Each sample is a large study of 1,000 thicknesses. Raise the skewness and the probability plot bends, the dashed true curve grows a long right tail, and the real fraction above 14&nbsp;µm climbs to dozens of times the normal-theory prediction. Switch the plot to Box-Cox to see the transformation straighten it, with the limits redrawn in standard deviations of the new scale. Box-Cox follows the real defect rate. The percentile index moves the right way but slowly, and it jumps around from sample to sample.</figcaption>
+  </figure>
+
+  <p>Two lessons come out of the figure. First, the percentile index averages the two half-widths, so a long tail on one side is partly cancelled by a short tail on the other, and its far percentiles rest on the handful of largest and smallest values even in a sample of 1,000. Second, Box-Cox works well when some power of the data really is close to normal, which you can check on the transformed probability plot. When the methods disagree badly with each other or with normal theory, treat the defect rate as uncertain and measure it directly.</p>
+
+  <div class="check" id="m8-q6">
+    <p class="check-q">A stable process has a clearly skewed probability plot. Its normal-theory <span class="m">\hat{C}_{pk}</span> is 1.35. What is the best next step?</p>
+    <ul class="check-options">
+      <li data-why="Normal theory is exactly what the probability plot rules out, so the 1.35 is not trustworthy.">Report 1.35, since the process is in control</li>
+      <li data-why="Skewness is a property of the stable process, not a special cause, so there is nothing to remove.">Look for special causes until the data become normal</li>
+      <li data-correct>Transform the data with Box-Cox, or compute percentile-based indices, and compare the results with 1.35</li>
+      <li data-why="Removing the largest values deletes the very tail that determines how much product exceeds the limit.">Drop the most extreme values and recompute</li>
+    </ul>
+    <div class="check-explain"><p>The handbook's two remedies are a normalizing transformation, applied to the data and the limits, and indices built from the 0.135th and 99.865th percentiles. Either one uses the real shape of the distribution. If they come out well below 1.35, the normal-theory figure was flattering the process.</p></div>
+  </div>
+</section>
+
+<section id="summary" class="summary">
+  <h2>Takeaways</h2>
+  <ul>
+    <li>Capability compares the natural spread of a stable process, <span class="m">6\sigma</span>, with the specification width. It is meaningless for a process that is out of control.</li>
+    <li><span class="m">C_p</span> measures potential if the process were centered. <span class="m">C_{pk} = \min(C_{pu}, C_{pl}) = C_p(1-k)</span> accounts for where the mean actually is. <span class="m">C_{pm}</span> also charges for distance from target.</li>
+    <li>For a centered normal process, <span class="m">C_p</span> of 1.00, 1.33, 1.67 and 2.00 correspond to about 0.27%, 63&nbsp;ppm, 0.6&nbsp;ppm and 2&nbsp;ppb outside the limits.</li>
+    <li>Estimated indices vary a lot. Use at least 100 values when you can, and report a confidence interval with the estimate.</li>
+    <li>Check normality with a probability plot. For skewed data, use a Box-Cox transformation or percentile-based indices such as <span class="m">C_{npk}</span>, and distrust tail rates from normal theory.</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>

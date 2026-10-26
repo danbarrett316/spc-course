@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en" class="math-pending">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Individuals and moving range charts · In Control</title>
+<meta name="description" content="Control charts for one measurement at a time: moving ranges, the 1.128 constant, the handbook's flow-rate example, and where individuals charts struggle.">
+<script>try{var t=localStorage.getItem('in-control:theme');if(t&&t!=='system')document.documentElement.dataset.theme=t}catch(e){}setTimeout(function(){document.documentElement.classList.remove('math-pending')},3000)</script>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="Individuals and moving range charts · In Control">
+<meta property="og:description" content="Control charts for one measurement at a time: moving ranges, the 1.128 constant, the handbook's flow-rate example, and where individuals charts struggle.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap">
+<link rel="stylesheet" href="../assets/css/course.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script type="module" src="../assets/js/course.js"></script>
+<script type="module" src="../assets/js/modules/04-individuals.js"></script>
+<style>
+  .own-data { display: grid; gap: 0.6rem; padding-top: 1rem; border-top: 1px solid var(--hair); }
+  .input-msg { min-height: 1.4em; font-size: 0.85rem; color: var(--ink-2); }
+  .input-msg.is-error { color: var(--signal); font-weight: 560; }
+</style>
+</head>
+<body data-module="4">
+<div class="shell">
+<nav class="rail" id="rail"></nav>
+<main class="page" id="main">
+
+<header class="module-head">
+  <h1>Individuals and moving range charts</h1>
+  <p class="lede">Sometimes a process gives you one number per batch, per day or per test. The individuals chart plots those numbers directly and learns what normal variation looks like from the gap between each value and the one before it.</p>
+</header>
+
+<section id="one-at-a-time">
+  <h2>When a subgroup is a single value</h2>
+  <p>An X̄ chart needs several units made close together in time. Many processes cannot supply them.</p>
+  <ul>
+    <li><strong>Destructive tests.</strong> Crushing a concrete cylinder or pulling a weld apart destroys the sample, so labs test as few as they can.</li>
+    <li><strong>Slow or batch processes.</strong> A reactor that makes one batch per shift yields one assay result per batch. Measuring that batch three times would only repeat the measurement error.</li>
+    <li><strong>One value per period.</strong> Monthly energy use per tonne, weekly scrap cost and the daily check of a reference standard each arrive once per period.</li>
+  </ul>
+  <p>For data like these the handbook uses the <strong>individuals chart</strong>, also called the X chart or I chart, paired with a <strong>moving range chart</strong>. Together they are often written I-MR or X-mR.</p>
+
+  <div class="check" id="m4-q1">
+    <p class="check-q">Which of these processes is the best fit for an individuals and moving range chart?</p>
+    <ul class="check-options">
+      <li data-why="With hundreds of bottles an hour you can easily take subgroups of four or five, and an X̄ chart will detect shifts sooner.">A bottling line that fills 600 bottles an hour, with fill volume measured by a scale</li>
+      <li data-why="Defect counts call for a c or u chart, which module 5 covers.">The number of scratches found on each painted panel</li>
+      <li data-correct>Tensile strength of a casting alloy, tested by breaking one bar from each heat</li>
+      <li data-why="A proportion of late orders calls for a p chart, which module 5 covers.">The fraction of orders shipped late each week</li>
+    </ul>
+    <div class="check-explain"><p>Each heat of alloy yields one tensile result, and the test destroys the bar. One value per heat is the natural subgroup, so the individuals chart fits. The bottling line could form rational subgroups, and the counts and proportions belong on attributes charts.</p></div>
+  </div>
+</section>
+
+<section id="moving-range">
+  <h2>Spread from consecutive values</h2>
+  <p>An X̄ chart estimates <span class="m">\sigma</span> from the spread inside each subgroup. A single value has no inside, so the individuals chart uses the difference between consecutive values instead. The <strong>moving range</strong> at point <span class="m">i</span> is</p>
+  <div class="eq">\text{MR}_i = \lvert x_i - x_{i-1} \rvert</div>
+  <p>Two values taken one after the other are the closest thing these data have to a rational subgroup of size 2. Their difference reflects short-term variation and little else. The average moving range divided by <span class="m">d_2</span> for subgroups of two estimates <span class="m">\sigma</span>, and three-sigma limits follow:</p>
+  <div class="eq">\begin{aligned}
+  \text{Individuals:}\quad &amp; \text{UCL} = \bar{x} + 3\,\frac{\overline{\text{MR}}}{1.128},\quad \text{CL} = \bar{x},\quad \text{LCL} = \bar{x} - 3\,\frac{\overline{\text{MR}}}{1.128}\\[4pt]
+  \text{Moving range:}\quad &amp; \text{UCL} = 3.267\,\overline{\text{MR}},\quad \text{CL} = \overline{\text{MR}},\quad \text{LCL} = 0
+  \end{aligned}</div>
+  <dl class="where">
+    <dt><span class="m">\bar{x}</span></dt><dd>average of all the individual values</dd>
+    <dt><span class="m">\overline{\text{MR}}</span></dt><dd>average of the moving ranges, one fewer than the number of values</dd>
+    <dt><span class="m">1.128</span></dt><dd><span class="m">d_2</span> for <span class="m">n = 2</span>: the average distance between two independent standard normal values, <span class="m">2/\sqrt{\pi}</span></dd>
+    <dt><span class="m">3.267</span></dt><dd><span class="m">D_4</span> for <span class="m">n = 2</span>, the same factor an R chart uses for subgroups of two</dd>
+  </dl>
+  <p>The moving range chart's lower limit is zero because <span class="m">D_3 = 0</span> for subgroups of two. The handbook also allows a target value in place of <span class="m">\bar{x}</span>, or a known standard in place of <span class="m">\overline{\text{MR}}</span>, when one exists.</p>
+  <div class="pitfall">
+    <span class="eyebrow">Common mistake</span>
+    <p>Neighboring moving ranges share a value, so they are not independent. A single unusual value creates two large moving ranges in a row, one for the jump into it and one for the jump back out. Before hunting for two causes, find the one point on the individuals chart that both ranges share.</p>
+  </div>
+</section>
+
+<section id="flow-rate">
+  <h2>The handbook's flow-rate example</h2>
+  <p>The handbook illustrates the chart with the flow rates of ten consecutive batches. The figure below builds the chart one batch at a time, and then lets you chart your own data the same way.</p>
+
+  <figure class="fig" id="fig-flow">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Individuals and moving range chart, one batch at a time</h3></div>
+    <div class="controls">
+      <label class="control" for="flow-k">
+        <span class="control-label">Values entered <output for="flow-k"></output></span>
+        <input type="range" id="flow-k" min="2" max="10" step="1" value="10">
+      </label>
+      <div class="control">
+        <span class="control-label">Estimate σ from</span>
+        <div class="seg" id="flow-sigma">
+          <button data-value="mr" aria-pressed="true">MR̄ / 1.128</button>
+          <button data-value="s">s / c₄</button>
+        </div>
+      </div>
+    </div>
+    <div class="fig-chart" id="flow-i"></div>
+    <div class="fig-chart" id="flow-mr"></div>
+    <ul class="legend" id="flow-legend"></ul>
+    <div id="flow-readouts"></div>
+    <div class="own-data">
+      <label class="control" for="flow-input">
+        <span class="control-label">Chart your own data: 3 to 500 values, separated by commas, spaces or line breaks, with a point for decimals</span>
+        <textarea id="flow-input" rows="3" spellcheck="false" autocomplete="off">49.6, 47.6, 49.9, 51.3, 47.8, 51.2, 52.6, 52.4, 53.6, 52.1</textarea>
+      </label>
+      <div class="control-row">
+        <button class="btn primary small" id="flow-apply" type="button">Chart these values</button>
+        <button class="btn ghost small" id="flow-restore" type="button">Restore the handbook data</button>
+      </div>
+      <p class="input-msg" id="flow-msg" role="status" aria-live="polite"></p>
+    </div>
+    <details class="data"><summary>Data table</summary><div class="table-wrap" id="flow-table"></div></details>
+    <figcaption>Top: each batch's flow rate with the center line and three-sigma limits. Bottom: the moving range from each batch to the one before. Hover a point to read its value and moving range. Drag the slider back to 2 and step forward to watch the limits settle as data arrive; with only a few values they swing widely. Switch the estimate to <span class="m">s/c_4</span> to see the alternative limits described below. To chart your own measurements, paste them into the box and press the button.</figcaption>
+  </figure>
+
+  <p>With all ten batches, <span class="m">\bar{x} = 50.81</span> and <span class="m">\overline{\text{MR}} = 1.8778</span>, so <span class="m">\hat{\sigma} = 1.8778/1.128 = 1.665</span> and the limits are <span class="m">50.81 \pm 3 \times 1.665</span>, from 45.8159 to 55.8041. Every batch falls inside them. Every moving range sits below its upper limit of <span class="m">3.267 \times 1.8778 = 6.13</span>. The handbook concludes that the process is in control.</p>
+
+  <div class="from-nist">
+    <span class="eyebrow">Handbook 6.3.2.2</span>
+    <p>The handbook's example uses the first ten batches of a flow-rate series. It reports <span class="m">\bar{x} = 50.81</span>, <span class="m">\overline{\text{MR}} = 1.8778</span> and limits of 45.8159 and 55.8041. It also suggests computing the limits as <span class="m">\bar{x} \pm 3s/c_4</span> at the start of Phase 2. <a href="https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc322.htm" target="_blank" rel="noopener">Read section 6.3.2.2</a>.</p>
+  </div>
+
+  <div class="check" id="m4-q2" data-answer="55.36" data-tolerance="0.02">
+    <p class="check-q">Suppose only the first five batches were available: 49.6, 47.6, 49.9, 51.3 and 47.8. What would the UCL of the individuals chart be, to two decimals? You can check your work by setting the slider to 5.</p>
+    <div class="check-explain"><p>The average is <span class="m">\bar{x} = 246.2/5 = 49.24</span>. The four moving ranges are 2.0, 2.3, 1.4 and 3.5, so <span class="m">\overline{\text{MR}} = 9.2/4 = 2.30</span> and <span class="m">\hat{\sigma} = 2.30/1.128 = 2.039</span>. The UCL is <span class="m">49.24 + 3 \times 2.039 = 55.36</span>. With fewer values the estimate of spread is larger and far less certain, which is why limits from five points should be treated as provisional.</p></div>
+  </div>
+
+  <h3>Limits for Phase 2</h3>
+  <p>For routine monitoring, the handbook adds an alternative. It puts the limits at <span class="m">\bar{x} \pm 3s/c_4</span>, where <span class="m">s</span> is the ordinary standard deviation of all the Phase 1 values. Once Phase 1 has shown the process to be stable, every value carries information about <span class="m">\sigma</span>, and <span class="m">s</span> uses that information more fully than the moving ranges do. In simulations of stable normal data, the estimate <span class="m">\overline{\text{MR}}/1.128</span> has about 1.6 times the variance of <span class="m">s/c_4</span>.</p>
+  <p>For the flow-rate data, <span class="m">s = 2.034</span> and <span class="m">c_4 = 0.9727</span> for ten values, which puts the limits at 44.54 and 57.08. They are wider than the moving-range limits because the last five batches average 52.38 against 49.24 for the first five, and <span class="m">s</span> counts that difference as spread. The next section shows why that matters.</p>
+</section>
+
+<section id="why-mr">
+  <h2>Why moving ranges come first</h2>
+  <p>If <span class="m">s/c_4</span> is more precise, why does Phase 1 use moving ranges at all? Because Phase 1 data are not yet known to be stable. The standard deviation measures distance from the overall average, so a shift or drift in the baseline inflates it. The moving ranges barely notice, because each one compares a value with its immediate neighbor, and a slow change moves both by nearly the same amount. A step change adds only one large moving range.</p>
+
+  <figure class="fig" id="fig-why-mr">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">A shift inflates s and leaves the moving ranges alone</h3></div>
+    <div class="controls">
+      <div class="control">
+        <span class="control-label">From day 31 the mean</span>
+        <div class="seg" id="mr-change">
+          <button data-value="shift" aria-pressed="true">Steps up</button>
+          <button data-value="drift">Drifts up</button>
+        </div>
+      </div>
+      <label class="control" for="mr-size">
+        <span class="control-label">Size of the change <output for="mr-size"></output></span>
+        <input type="range" id="mr-size" min="0" max="3" step="0.25" value="2">
+      </label>
+      <div class="control-row">
+        <button class="btn small" id="mr-new" type="button">New sample</button>
+      </div>
+    </div>
+    <div class="fig-split">
+      <div class="fig-chart" id="mr-chart"></div>
+      <div class="fig-chart" id="mr-curve"></div>
+    </div>
+    <ul class="legend" id="mr-legend"></ul>
+    <div id="mr-readouts"></div>
+    <figcaption>Sixty concrete cylinders, one crushed each day, with a true short-term standard deviation of 1.5&nbsp;MPa. From day 31 the mean strength steps up or drifts upward by the amount you choose. Left: limits from the moving ranges (gray) and from the overall standard deviation (violet), both computed from all 60 days as a Phase 1 study would. Right: both estimates of σ for every size of change, using the same sixty days. Push the change up. The violet limits spread apart and swallow the shift they should reveal, while the moving-range estimate stays close to 1.5&nbsp;MPa.</figcaption>
+  </figure>
+
+  <div class="key-idea">
+    <span class="eyebrow">Key idea</span>
+    <p>Use moving ranges to set limits while stability is still in question. Once Phase 1 shows the process is stable, the overall standard deviation gives slightly better limits for Phase 2.</p>
+  </div>
+
+  <div class="check" id="m4-q3">
+    <p class="check-q">A Phase 1 baseline of 50 daily values contains a slow upward drift that no one has noticed yet. Which estimate of σ stays closest to the true day-to-day variation?</p>
+    <ul class="check-options">
+      <li data-why="The overall standard deviation measures distance from the grand average, and the drift pushes values at both ends away from it.">The standard deviation of all 50 values</li>
+      <li data-why="c₄ only corrects a small bias in s. It does nothing about the extra spread the drift adds.">The standard deviation divided by c₄</li>
+      <li data-correct>The average moving range divided by 1.128</li>
+      <li data-why="The overall range is even more sensitive to the drift than s, because it depends only on the two most extreme values.">The overall range of the 50 values divided by 6</li>
+    </ul>
+    <div class="check-explain"><p>Each moving range compares neighboring days, which a slow drift moves by almost the same amount. <span class="m">\overline{\text{MR}}/1.128</span> therefore tracks short-term variation, while any estimate built on distance from the overall average absorbs the drift.</p></div>
+  </div>
+</section>
+
+<section id="non-normal">
+  <h2>Sensitive to skewed data</h2>
+  <p>Averages look more normal than the values they come from, which protects an X̄ chart when the raw data are skewed. An individuals chart has no such protection. Its three-sigma limits assume the individual values are roughly normal, and when they are not, the false-alarm rate drifts away from 0.27%.</p>
+  <p>Right-skewed data are the common case. Impurity levels, cycle times and particle counts cannot fall below zero but can run high. Their long upper tail crosses the UCL far more often than the 0.135% that normal theory allows, while the LCL can fall below zero, where nothing can reach it.</p>
+
+  <figure class="fig" id="fig-skew">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Skewed data and false alarms</h3></div>
+    <div class="controls">
+      <div class="control">
+        <span class="control-label">Shape of the impurity data</span>
+        <div class="seg" id="skew-shape">
+          <button data-value="normal" aria-pressed="true">Normal</button>
+          <button data-value="mild">Moderately skewed</button>
+          <button data-value="strong">Strongly skewed</button>
+        </div>
+      </div>
+      <div class="control-row">
+        <button class="btn small" id="skew-new" type="button">New 100 lots</button>
+      </div>
+    </div>
+    <div class="fig-split">
+      <div class="fig-chart" id="skew-run"></div>
+      <div class="fig-chart" id="skew-hist"></div>
+    </div>
+    <ul class="legend" id="skew-legend"></ul>
+    <div id="skew-readouts"></div>
+    <figcaption>Trace impurity in a solvent, in ppm, one assay per lot. Each process here is in control, and nothing changes over time. The limits come from the moving ranges of 200,000 simulated lots, which pins them down precisely. Left: 100 of those lots against the limits. Right: the long-run distribution, the normal curve the limits assume, and the same limits. Switch to the skewed shapes and watch the false alarms gather above the UCL. With strong skew the LCL falls below zero, where no lot can reach it.</figcaption>
+  </figure>
+
+  <p>When a histogram of the Phase 1 data is clearly skewed, two remedies work well. Chart a transformation that makes the data closer to normal; the logarithm often suits impurities and cycle times. Or, when the process allows it, collect small subgroups and use an X̄ chart, whose averages are closer to normal.</p>
+
+  <div class="check" id="m4-q4">
+    <p class="check-q">Cycle times on a packaging line are strongly right-skewed. What should you expect from an individuals chart with ordinary three-sigma limits?</p>
+    <ul class="check-options">
+      <li data-why="The 0.27% rate relies on normal tails. A long upper tail crosses the UCL far more often.">About 0.27% false alarms, split evenly above and below</li>
+      <li data-correct>More false alarms than 0.27%, nearly all above the UCL, and an LCL that may be useless</li>
+      <li data-why="Skewness lengthens the upper tail. The extra exceedances come above the UCL, not below the LCL.">More false alarms, nearly all below the LCL</li>
+      <li data-why="Moving ranges estimate spread, but they cannot fix the shape of the distribution the limits assume.">No change, because the moving ranges adjust for the skew</li>
+    </ul>
+    <div class="check-explain"><p>The long right tail produces frequent points above the UCL, while the short left tail rarely reaches the LCL, which may even sit below zero. In the figure, moderate skew roughly triples the false-alarm rate and strong skew raises it about sevenfold. Transform the data or chart subgroup averages instead.</p></div>
+  </div>
+</section>
+
+<section id="detection">
+  <h2>Slow to catch small shifts</h2>
+  <p>An individuals chart judges single values, so its limits sit at <span class="m">\pm 3\sigma</span> instead of <span class="m">\pm 3\sigma/\sqrt{n}</span>. A one-sigma shift moves each point only a third of the way to a limit, and the chart needs about 44 points on average to notice, as <a href="02-control-charts.html#arl">module 2</a> showed. An X̄ chart with subgroups of four sees the same shift as two standard errors and needs about 6 subgroups.</p>
+
+  <figure class="fig" id="fig-arl">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Average run length: individuals versus X̄</h3></div>
+    <div class="controls">
+      <label class="control" for="arl-n">
+        <span class="control-label">X̄ subgroup size <output for="arl-n"></output></span>
+        <input type="range" id="arl-n" min="2" max="10" step="1" value="4">
+      </label>
+      <label class="control" for="arl-shift">
+        <span class="control-label">Shift in the mean <output for="arl-shift"></output></span>
+        <input type="range" id="arl-shift" min="0" max="3" step="0.25" value="1">
+      </label>
+      <div class="control">
+        <span class="control-label">Count the wait in</span>
+        <div class="seg" id="arl-count">
+          <button data-value="points" aria-pressed="true">Plotted points</button>
+          <button data-value="meas">Measurements</button>
+        </div>
+      </div>
+    </div>
+    <div class="fig-chart" id="arl-chart"></div>
+    <ul class="legend" id="arl-legend"></ul>
+    <div id="arl-readouts"></div>
+    <figcaption>The average wait until a three-sigma chart signals, against the size of a sustained shift in the mean, on a logarithmic scale. Hover to read values. Counted in plotted points, the X̄ chart wins at every shift. Counted in measurements, the race is closer, because each X̄ point uses <span class="m">n</span> of them. With <span class="m">n = 4</span> the X̄ chart still wins for shifts between about 0.6σ and 2.3σ, and catches a one-sigma shift after about 25 measurements against 44. For larger shifts the individuals chart, which acts on every value as it arrives, is quicker. Below about 0.6σ both charts are slow.</figcaption>
+  </figure>
+
+  <p>Slow detection of small shifts is the individuals chart's main weakness. When one value per period is all you can get and small shifts matter, the CUSUM and EWMA charts in <a href="06-cusum.html">module 6</a> and <a href="07-ewma.html">module 7</a> accumulate evidence across many points and catch a one-sigma shift far sooner.</p>
+
+  <div class="check" id="m4-q5">
+    <p class="check-q">The mean of a process charted with an individuals chart shifts by one standard deviation and stays there. On average, about how many points pass before the chart signals?</p>
+    <ul class="check-options">
+      <li data-why="That is roughly the X̄ chart with subgroups of four, which sees the shift as two standard errors.">About 6</li>
+      <li data-why="That is the in-control ARL, the wait for a false alarm when nothing has changed.">About 370</li>
+      <li data-why="Even a two-sigma shift takes about 6 points on average. A one-sigma shift takes much longer.">About 2</li>
+      <li data-correct>About 44</li>
+    </ul>
+    <div class="check-explain"><p>After a one-sigma shift, each point lands beyond the UCL with probability <span class="m">P(Z &gt; 2) \approx 0.0228</span>, and almost never below the LCL. The average run length is <span class="m">1/0.0228 \approx 44</span> points.</p></div>
+  </div>
+</section>
+
+<section id="summary" class="summary">
+  <h2>Takeaways</h2>
+  <ul>
+    <li>Use an individuals chart when the natural subgroup is a single value, as with destructive tests, slow batch processes and figures reported once per period.</li>
+    <li>The moving range <span class="m">\lvert x_i - x_{i-1}\rvert</span> measures short-term variation. The limits are <span class="m">\bar{x} \pm 3\,\overline{\text{MR}}/1.128</span>, and the moving range chart's upper limit is <span class="m">3.267\,\overline{\text{MR}}</span>.</li>
+    <li>In the handbook's flow-rate example the limits are 45.8159 and 55.8041, and all ten batches are in control.</li>
+    <li>Moving ranges resist shifts and drifts in Phase 1 data. Once the process is shown to be stable, <span class="m">\bar{x} \pm 3s/c_4</span> gives more precise limits for Phase 2.</li>
+    <li>Individuals charts assume roughly normal data and are slow to catch small shifts. Transform skewed data, and turn to CUSUM or EWMA when small shifts matter.</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>

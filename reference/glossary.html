@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en" class="math-pending">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Glossary · In Control</title>
+<meta name="description" content="Plain-language definitions of the statistical process control terms used in the In Control course, from ARL and AQL to V-masks and variance components, each linked to the module that teaches it.">
+<script>try{var t=localStorage.getItem('in-control:theme');if(t&&t!=='system')document.documentElement.dataset.theme=t}catch(e){}setTimeout(function(){document.documentElement.classList.remove('math-pending')},3000)</script>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="Glossary · In Control">
+<meta property="og:description" content="Plain-language definitions of the statistical process control terms used in the In Control course, from ARL and AQL to V-masks and variance components, each linked to the module that teaches it.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap">
+<link rel="stylesheet" href="../assets/css/course.css">
+<style>
+  .page [hidden] { display: none !important; }
+  .gloss-search { display: grid; gap: 0.6rem; margin-top: -1rem; margin-bottom: 2.5rem; }
+  .gloss-search input { width: 100%; font-size: 1rem; padding: 0.6rem 0.8rem; }
+  .gloss-search .toc { margin-top: 0.25rem; }
+  .gloss-count { font-size: 0.85rem; color: var(--muted); }
+  .gloss-empty { padding: 1rem 1.15rem; border-radius: 12px; background: var(--surface-2); color: var(--ink-2); }
+  .page .gloss-letter + .gloss-letter { margin-top: 2.5rem; }
+  .gloss { margin: 0; display: grid; gap: 1.1rem; }
+  .gloss-entry { scroll-margin-top: 5rem; }
+  .gloss-entry dt { font-family: var(--font-display); font-weight: 620; font-stretch: 104%; font-size: 1.05rem; color: var(--ink); }
+  .gloss-entry dd { margin: 0.2rem 0 0; color: var(--ink-2); }
+  .gloss-entry .go { font-size: 0.85rem; white-space: nowrap; margin-left: 0.2rem; }
+  .gloss-entry:target dt { color: var(--accent-ink); }
+</style>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script type="module" src="../assets/js/course.js"></script>
+<script type="module" src="../assets/js/reference/glossary.js"></script>
+</head>
+<body data-page="glossary">
+<div class="shell">
+<nav class="rail" id="rail"></nav>
+<main class="page" id="main">
+
+<header class="module-head">
+  <div class="head-text">
+    <p class="eyebrow">Reference</p>
+    <h1>Glossary</h1>
+    <p class="lede">The terms of statistical process control in plain language. Each definition links to the module that teaches it.</p>
+  </div>
+</header>
+
+<div class="gloss-search" role="search">
+  <label class="control" for="gloss-q"><span class="control-label">Search 76 terms</span></label>
+  <input type="text" id="gloss-q" autocomplete="off" spellcheck="false" placeholder="Try “capability”, “CUSUM” or “risk”" aria-describedby="gloss-count">
+  <p class="gloss-count" id="gloss-count" aria-live="polite"></p>
+  <nav aria-label="Jump to a letter"><ul class="toc" id="gloss-letters"><li><a href="#letter-a">A</a></li><li><a href="#letter-b">B</a></li><li><a href="#letter-c">C</a></li><li><a href="#letter-d">D</a></li><li><a href="#letter-e">E</a></li><li><a href="#letter-f">F</a></li><li><a href="#letter-h">H</a></li><li><a href="#letter-i">I</a></li><li><a href="#letter-l">L</a></li><li><a href="#letter-m">M</a></li><li><a href="#letter-n">N</a></li><li><a href="#letter-o">O</a></li><li><a href="#letter-p">P</a></li><li><a href="#letter-r">R</a></li><li><a href="#letter-s">S</a></li><li><a href="#letter-t">T</a></li><li><a href="#letter-u">U</a></li><li><a href="#letter-v">V</a></li><li><a href="#letter-w">W</a></li><li><a href="#letter-x">X</a></li><li><a href="#letter-z">Z</a></li></ul></nav>
+</div>
+
+<p class="gloss-empty" id="gloss-empty" hidden></p>
+
+<section id="letter-a" class="gloss-letter">
+  <h2>A</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-acceptable-quality-level" data-also="aql">
+      <dt>Acceptable quality level (AQL)</dt>
+      <dd>The poorest fraction defective that a consumer would still accept as a supplier's process average. A sampling plan is designed to accept lots at the AQL most of the time. <a class="go" href="../modules/09-acceptance-sampling.html">Module 9</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-acceptance-number">
+      <dt>Acceptance number</dt>
+      <dd>The largest number of defectives a sample may contain for the lot to be accepted, written c in a single sampling plan. <a class="go" href="../modules/09-acceptance-sampling.html">Module 9</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-acceptance-sampling">
+      <dt>Acceptance sampling</dt>
+      <dd>Inspecting a random sample from a lot and using the result to accept or reject the whole lot. It judges product that has already been made and does nothing to improve the process. <a class="go" href="../modules/09-acceptance-sampling.html">Module 9</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-assignable-cause">
+      <dt>Assignable cause</dt>
+      <dd>Shewhart's term for a special cause. It is a specific source of variation outside the usual process, such as a worn tool or a new lot of raw material. <a class="go" href="../modules/01-variation.html#two-kinds">Module 1</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-attribute-data" data-also="attributes">
+      <dt>Attribute data</dt>
+      <dd>Data that count or classify items, such as the number of defectives in a sample or the number of scratches on a panel, instead of measuring them on a continuous scale. <a class="go" href="../modules/05-attributes.html">Module 5</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-autocorrelation">
+      <dt>Autocorrelation</dt>
+      <dd>Correlation between an observation and earlier observations in the same series. Standard control limits assume there is none, so strongly autocorrelated data need other methods. <a class="go" href="../modules/11-time-series.html">Module 11</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-average-outgoing-quality" data-also="aoq">
+      <dt>Average outgoing quality (AOQ)</dt>
+      <dd>The average fraction defective in lots after inspection, when rejected lots are screened and their defectives replaced. <a class="go" href="../modules/09-acceptance-sampling.html">Module 9</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-average-outgoing-quality-limit" data-also="aoql">
+      <dt>Average outgoing quality limit (AOQL)</dt>
+      <dd>The highest value the AOQ reaches over all levels of incoming quality. It caps the average quality that leaves inspection. <a class="go" href="../modules/09-acceptance-sampling.html">Module 9</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-average-run-length" data-also="arl">
+      <dt>Average run length (ARL)</dt>
+      <dd>The average number of points plotted before a chart signals. A good chart has a long ARL while the process is in control and a short one after a shift. <a class="go" href="../modules/02-control-charts.html">Module 2</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-average-sample-number" data-also="asn">
+      <dt>Average sample number (ASN)</dt>
+      <dd>The average number of items inspected per lot under a double, multiple or sequential plan, where the amount inspected depends on what the first items show. <a class="go" href="../modules/09-acceptance-sampling.html">Module 9</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-average-total-inspection" data-also="ati">
+      <dt>Average total inspection (ATI)</dt>
+      <dd>The average number of items inspected per lot, counting the 100% screening of every rejected lot. <a class="go" href="../modules/09-acceptance-sampling.html">Module 9</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-b" class="gloss-letter">
+  <h2>B</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-batch-process">
+      <dt>Batch process</dt>
+      <dd>A process that handles items in groups, such as wafers in a cassette, so items in the same group share conditions. Batches add layers of variation that a single control chart cannot separate. <a class="go" href="../modules/12-case-study.html#process">Module 12</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-box-plot" data-also="boxplot">
+      <dt>Box plot</dt>
+      <dd>A graph of a group's median, middle half and extremes. Box plots side by side compare groups at a glance. <a class="go" href="../modules/12-case-study.html#look">Module 12</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-box-jenkins-model" data-also="arima box jenkins">
+      <dt>Box–Jenkins model</dt>
+      <dd>A time-series model, also called ARIMA, built from autoregressive terms, moving-average terms and differencing, and used to describe and forecast a series. <a class="go" href="../modules/11-time-series.html">Module 11</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-c" class="gloss-letter">
+  <h2>C</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-c-chart">
+      <dt>c chart</dt>
+      <dd>A control chart for the number of defects in inspection units of the same size. Its limits come from the Poisson distribution. <a class="go" href="../modules/05-attributes.html">Module 5</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-capability" data-also="process capability">
+      <dt>Capability</dt>
+      <dd>How well the natural spread of a stable process fits inside its specification limits, usually summarized by indices such as Cp and Cpk. <a class="go" href="../modules/08-capability.html">Module 8</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-center-line" data-also="centre line cl">
+      <dt>Center line</dt>
+      <dd>The line drawn at the average of the plotted statistic on a control chart. <a class="go" href="../modules/02-control-charts.html">Module 2</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-chance-cause">
+      <dt>Chance cause</dt>
+      <dd>Shewhart's term for a common cause, one of the many small influences that are always present in a process. <a class="go" href="../modules/01-variation.html#two-kinds">Module 1</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-common-cause">
+      <dt>Common cause</dt>
+      <dd>A source of variation built into the process and present all the time. Only a change to the process itself reduces common-cause variation. <a class="go" href="../modules/01-variation.html#two-kinds">Module 1</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-consumers-risk" data-also="beta">
+      <dt>Consumer's risk</dt>
+      <dd>The probability that a sampling plan accepts a lot whose quality is at the LTPD, a lot the consumer considers bad. It is often written β. <a class="go" href="../modules/09-acceptance-sampling.html">Module 9</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-control-chart">
+      <dt>Control chart</dt>
+      <dd>A time-ordered plot of a process statistic with a center line and control limits, used to separate the signals of special causes from common-cause noise. <a class="go" href="../modules/02-control-charts.html">Module 2</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-control-limit" data-also="ucl lcl upper lower">
+      <dt>Control limit</dt>
+      <dd>A line on a control chart, usually three standard deviations of the plotted statistic from the center line. A point beyond it signals that the process may have changed. <a class="go" href="../modules/02-control-charts.html">Module 2</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-cp">
+      <dt>Cp</dt>
+      <dd>A capability index that compares the width of the specification with six process standard deviations. It ignores where the process is centered. <a class="go" href="../modules/08-capability.html">Module 8</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-cpk" data-also="cpu cpl">
+      <dt>Cpk</dt>
+      <dd>A capability index based on the distance from the process mean to the nearer specification limit, in units of three standard deviations. An off-center process gets a lower Cpk. <a class="go" href="../modules/08-capability.html">Module 8</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-cpm" data-also="taguchi">
+      <dt>Cpm</dt>
+      <dd>A capability index that measures spread around the target value instead of around the process mean, so it falls as the mean moves away from target. <a class="go" href="../modules/08-capability.html">Module 8</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-cusum-chart" data-also="cumulative sum">
+      <dt>CUSUM chart</dt>
+      <dd>A chart of cumulative sums of deviations from target, which lets a small, persistent shift build up into a clear signal. <a class="go" href="../modules/06-cusum.html">Module 6</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-d" class="gloss-letter">
+  <h2>D</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-decision-interval">
+      <dt>Decision interval</dt>
+      <dd>The CUSUM threshold, written h. The chart signals when either cumulative sum exceeds it. <a class="go" href="../modules/06-cusum.html">Module 6</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-defect">
+      <dt>Defect</dt>
+      <dd>A single flaw on an item, such as a scratch or a void. One item can carry several defects. <a class="go" href="../modules/05-attributes.html">Module 5</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-defective">
+      <dt>Defective</dt>
+      <dd>An item that fails to meet its requirements, also called nonconforming. A defective item has at least one defect serious enough to reject it. <a class="go" href="../modules/05-attributes.html">Module 5</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-double-exponential-smoothing" data-also="holt trend">
+      <dt>Double exponential smoothing</dt>
+      <dd>Exponential smoothing with a second equation for the trend, so forecasts can follow a series that rises or falls steadily. <a class="go" href="../modules/11-time-series.html">Module 11</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-double-sampling">
+      <dt>Double sampling</dt>
+      <dd>A sampling plan that takes a second sample when the first one gives no clear decision to accept or reject. <a class="go" href="../modules/09-acceptance-sampling.html">Module 9</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-e" class="gloss-letter">
+  <h2>E</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-ewma-chart" data-also="exponentially weighted moving average">
+      <dt>EWMA chart</dt>
+      <dd>A chart of the exponentially weighted moving average, which gives the newest observation a weight λ and older ones geometrically less. It detects small shifts sooner than a Shewhart chart. <a class="go" href="../modules/07-ewma.html">Module 7</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-exponential-smoothing">
+      <dt>Exponential smoothing</dt>
+      <dd>A forecasting method in which each new smoothed value is a weighted average of the latest observation and the previous smoothed value. <a class="go" href="../modules/11-time-series.html">Module 11</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-f" class="gloss-letter">
+  <h2>F</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-false-alarm">
+      <dt>False alarm</dt>
+      <dd>A control chart signal when the process has not changed. With 3σ limits and a stable, normally distributed process, about 0.27% of points give one. <a class="go" href="../modules/02-control-charts.html">Module 2</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-h" class="gloss-letter">
+  <h2>H</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-hotelling-t2" data-also="t2 t-squared">
+      <dt>Hotelling T²</dt>
+      <dd>A single statistic that measures how far a set of several measurements lies from its mean, taking the correlations between the measurements into account. The T² chart plots it against an upper limit. <a class="go" href="../modules/10-multivariate.html">Module 10</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-i" class="gloss-letter">
+  <h2>I</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-in-statistical-control" data-also="in control stable">
+      <dt>In statistical control</dt>
+      <dd>Describes a process whose variation comes only from common causes, so that its future output is predictable within limits. <a class="go" href="../modules/01-variation.html#two-kinds">Module 1</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-individuals-chart" data-also="i chart i-mr imr">
+      <dt>Individuals chart</dt>
+      <dd>A control chart for single measurements, with limits estimated from the moving ranges between neighbouring points. It is also called an X chart. <a class="go" href="../modules/04-individuals.html">Module 4</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-l" class="gloss-letter">
+  <h2>L</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-lot" data-also="batch">
+      <dt>Lot</dt>
+      <dd>A group of items produced under similar conditions and judged together, such as a cassette of wafers or a shipment of parts. <a class="go" href="../modules/09-acceptance-sampling.html">Module 9</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-lot-to-lot-variation" data-also="ll limits between lots">
+      <dt>Lot-to-lot variation</dt>
+      <dd>Variation between lot averages that is part of how a batch process normally runs. Limits for lot means must include it, as the LL limits in the lithography case study do. <a class="go" href="../modules/12-case-study.html#chart-set">Module 12</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-ltpd" data-also="lot tolerance percent defective rql">
+      <dt>LTPD</dt>
+      <dd>Lot tolerance percent defective, the fraction defective at which the consumer wants lots rejected with high probability. It is also called the rejectable quality level. <a class="go" href="../modules/09-acceptance-sampling.html">Module 9</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-m" class="gloss-letter">
+  <h2>M</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-mewma-chart" data-also="multivariate ewma">
+      <dt>MEWMA chart</dt>
+      <dd>The multivariate EWMA chart. It smooths a vector of measurements over time and plots a T²-type distance of the smoothed vector. <a class="go" href="../modules/10-multivariate.html">Module 10</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-moving-average">
+      <dt>Moving average</dt>
+      <dd>The average of the most recent k observations, recomputed as each new observation arrives. <a class="go" href="../modules/11-time-series.html">Module 11</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-moving-range" data-also="mr">
+      <dt>Moving range</dt>
+      <dd>The absolute difference between two consecutive observations. The average moving range estimates short-term variation for an individuals chart. <a class="go" href="../modules/04-individuals.html">Module 4</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-multivariate-control-chart">
+      <dt>Multivariate control chart</dt>
+      <dd>A chart that monitors several correlated measurements together through one statistic, such as Hotelling's T². <a class="go" href="../modules/10-multivariate.html">Module 10</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-n" class="gloss-letter">
+  <h2>N</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-nested-design" data-also="hierarchical">
+      <dt>Nested design</dt>
+      <dd>A data structure in which each level of one factor appears within only one level of another, such as wafers inside cassettes. Wafer 1 of cassette 3 is unrelated to wafer 1 of cassette 7. <a class="go" href="../modules/12-case-study.html#components">Module 12</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-nonconforming">
+      <dt>Nonconforming</dt>
+      <dd>Failing to meet a specification. A nonconforming item is a defective. <a class="go" href="../modules/05-attributes.html">Module 5</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-np-chart">
+      <dt>np chart</dt>
+      <dd>A control chart for the number of defectives in samples of a fixed size n. <a class="go" href="../modules/05-attributes.html">Module 5</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-o" class="gloss-letter">
+  <h2>O</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-oc-curve" data-also="operating characteristic">
+      <dt>OC curve</dt>
+      <dd>The operating characteristic curve of a sampling plan, which plots the probability of accepting a lot against the lot's true fraction defective. <a class="go" href="../modules/09-acceptance-sampling.html">Module 9</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-ocap" data-also="out-of-control action plan">
+      <dt>OCAP</dt>
+      <dd>An out-of-control action plan, a flowchart written in advance for a control chart that tells people what to check, and in what order, when the chart signals. <a class="go" href="../modules/12-case-study.html#ocap">Module 12</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-p" class="gloss-letter">
+  <h2>P</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-p-chart" data-also="proportion">
+      <dt>p chart</dt>
+      <dd>A control chart for the fraction defective in samples, which may vary in size. <a class="go" href="../modules/05-attributes.html">Module 5</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-phase-i" data-also="phase 1">
+      <dt>Phase I</dt>
+      <dd>The baseline stage of control charting. Historical data are charted with trial limits, points with assignable causes are removed, and the limits are recomputed until they describe the process running as it should. <a class="go" href="../modules/01-variation.html#monitoring-and-control">Module 1</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-phase-ii" data-also="phase 2">
+      <dt>Phase II</dt>
+      <dd>The monitoring stage, in which new data are plotted against the limits fixed in Phase I. <a class="go" href="../modules/01-variation.html#monitoring-and-control">Module 1</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-principal-components" data-also="pca">
+      <dt>Principal components</dt>
+      <dd>New variables formed as uncorrelated weighted combinations of the original measurements, ordered by how much of the variation each explains. A few components can summarize many correlated measurements. <a class="go" href="../modules/10-multivariate.html">Module 10</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-producers-risk" data-also="alpha">
+      <dt>Producer's risk</dt>
+      <dd>The probability that a sampling plan rejects a lot whose quality is at the AQL, a lot the producer considers good. It is often written α. <a class="go" href="../modules/09-acceptance-sampling.html">Module 9</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-r" class="gloss-letter">
+  <h2>R</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-r-chart" data-also="range">
+      <dt>R chart</dt>
+      <dd>A control chart of subgroup ranges that monitors process spread, usually drawn under an X̄ chart. <a class="go" href="../modules/03-xbar-r-s.html">Module 3</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-random-effects-anova" data-also="anova analysis of variance">
+      <dt>Random-effects ANOVA</dt>
+      <dd>An analysis of variance that treats the levels of a factor, such as cassettes, as a random sample from a larger population and estimates how much variance each factor contributes. <a class="go" href="../modules/12-case-study.html#components">Module 12</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-rational-subgroup">
+      <dt>Rational subgroup</dt>
+      <dd>A subgroup chosen so that only common-cause variation acts within it, which makes any difference between subgroups stand out. <a class="go" href="../modules/03-xbar-r-s.html">Module 3</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-rectifying-inspection">
+      <dt>Rectifying inspection</dt>
+      <dd>Inspection in which rejected lots are screened 100% and their defectives replaced, which improves the quality that leaves inspection. <a class="go" href="../modules/09-acceptance-sampling.html">Module 9</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-run-rules">
+      <dt>Run rules</dt>
+      <dd>Extra rules that flag unusual patterns inside the control limits, such as several points in a row on one side of the center line. <a class="go" href="../modules/02-control-charts.html#run-rules">Module 2</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-s" class="gloss-letter">
+  <h2>S</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-s-chart" data-also="standard deviation chart sigma">
+      <dt>s chart</dt>
+      <dd>A control chart of subgroup standard deviations that monitors process spread. It is preferred to the R chart for larger subgroups. <a class="go" href="../modules/03-xbar-r-s.html">Module 3</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-sequential-sampling">
+      <dt>Sequential sampling</dt>
+      <dd>A sampling plan that inspects items one at a time and decides after each one whether to accept the lot, reject it, or keep sampling. <a class="go" href="../modules/09-acceptance-sampling.html">Module 9</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-shewhart-chart">
+      <dt>Shewhart chart</dt>
+      <dd>The classic control chart, which plots each subgroup's statistic on its own against 3σ limits around a center line. <a class="go" href="../modules/02-control-charts.html">Module 2</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-single-sampling-plan">
+      <dt>Single sampling plan</dt>
+      <dd>A plan that takes one sample of n items and accepts the lot if it contains c or fewer defectives. <a class="go" href="../modules/09-acceptance-sampling.html">Module 9</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-skip-lot-sampling">
+      <dt>Skip-lot sampling</dt>
+      <dd>A plan that inspects only a fraction of lots once a supplier has built a good record, and returns to inspecting every lot when one fails. <a class="go" href="../modules/09-acceptance-sampling.html">Module 9</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-smoothing-constant" data-also="lambda alpha">
+      <dt>Smoothing constant</dt>
+      <dd>The weight that an EWMA or exponential smoothing gives to the newest observation, written λ or α. Small values average over a long memory, and values near 1 react quickly. <a class="go" href="../modules/07-ewma.html">Module 7</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-special-cause">
+      <dt>Special cause</dt>
+      <dd>A specific, identifiable source of variation that is not part of the usual process, such as a mis-set dial or a bad batch of material. Special causes show up as signals on a control chart. <a class="go" href="../modules/01-variation.html#two-kinds">Module 1</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-specification-limit" data-also="usl lsl spec">
+      <dt>Specification limit</dt>
+      <dd>A limit on an individual item, set by the design or the customer. Specification limits are the voice of the customer and are set independently of control limits. <a class="go" href="../modules/01-variation.html#four-states">Module 1</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-stratification">
+      <dt>Stratification</dt>
+      <dd>Mixing items from different sources, such as several machines or mold cavities, in one subgroup. The subgroup spread grows, the limits widen, and the points hug the center line. <a class="go" href="../modules/03-xbar-r-s.html">Module 3</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-subgroup" data-also="sample">
+      <dt>Subgroup</dt>
+      <dd>A small set of measurements taken close together in time and plotted as one point on a control chart. <a class="go" href="../modules/03-xbar-r-s.html">Module 3</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-t" class="gloss-letter">
+  <h2>T</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-tampering" data-also="over-adjustment">
+      <dt>Tampering</dt>
+      <dd>Adjusting a stable process in response to common-cause variation. Each adjustment adds variation instead of removing it. <a class="go" href="../modules/01-variation.html#tampering">Module 1</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-u" class="gloss-letter">
+  <h2>U</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-u-chart">
+      <dt>u chart</dt>
+      <dd>A control chart for defects per unit when the amount inspected varies from sample to sample. <a class="go" href="../modules/05-attributes.html">Module 5</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-v" class="gloss-letter">
+  <h2>V</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-v-mask" data-also="vmask">
+      <dt>V-mask</dt>
+      <dd>A V-shaped template laid over a CUSUM plot. The process is out of control when earlier points fall outside the arms of the V. <a class="go" href="../modules/06-cusum.html">Module 6</a></dd>
+    </div>
+    <div class="gloss-entry" id="term-variance-component">
+      <dt>Variance component</dt>
+      <dd>The part of the total variance that comes from one source, such as differences between cassettes, estimated with a random-effects analysis of variance. <a class="go" href="../modules/12-case-study.html#components">Module 12</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-w" class="gloss-letter">
+  <h2>W</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-western-electric-rules" data-also="weco">
+      <dt>Western Electric rules</dt>
+      <dd>The run rules published in Western Electric's 1956 quality control handbook, based on zones one, two and three standard deviations from the center line. <a class="go" href="../modules/02-control-charts.html#run-rules">Module 2</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-x" class="gloss-letter">
+  <h2>X</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-xbar-chart" data-also="xbar x-bar x bar average mean">
+      <dt>X̄ chart</dt>
+      <dd>A control chart of subgroup averages that monitors the process mean. Its limits come from the variation within subgroups. <a class="go" href="../modules/03-xbar-r-s.html">Module 3</a></dd>
+    </div>
+  </dl>
+</section>
+
+<section id="letter-z" class="gloss-letter">
+  <h2>Z</h2>
+  <dl class="gloss">
+    <div class="gloss-entry" id="term-zones" data-also="zone a b c">
+      <dt>Zones</dt>
+      <dd>Bands one, two and three standard deviations from the center line, labelled C, B and A, that the Western Electric rules use. <a class="go" href="../modules/02-control-charts.html#run-rules">Module 2</a></dd>
+    </div>
+  </dl>
+</section>
+
+</main>
+</div>
+</body>
+</html>

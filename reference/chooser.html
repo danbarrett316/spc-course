@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en" class="math-pending">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Which chart should I use? · In Control</title>
+<meta name="description" content="An interactive guide to choosing a control chart for measurements, counts and proportions, with the full decision tree.">
+<script>try{var t=localStorage.getItem('in-control:theme');if(t&&t!=='system')document.documentElement.dataset.theme=t}catch(e){}setTimeout(function(){document.documentElement.classList.remove('math-pending')},3000)</script>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="Which chart should I use? · In Control">
+<meta property="og:description" content="An interactive guide to choosing a control chart for measurements, counts and proportions, with the full decision tree.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap">
+<link rel="stylesheet" href="../assets/css/course.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script type="module" src="../assets/js/course.js"></script>
+<script type="module" src="../assets/js/reference/chooser.js"></script>
+<style>
+  /* interactive guide */
+  .guide { gap: 1.25rem; }
+  .guide > *, .rec > * { min-width: 0; }
+  .crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; list-style: none; margin: 0; padding: 0 !important; }
+  .crumbs li { display: inline-flex; align-items: center; gap: 0.35rem; margin: 0 !important; }
+  .crumbs li + li::before { content: "›"; color: var(--muted); }
+  .crumbs button { border: 1px solid var(--hair); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 0.2rem 0.65rem; font: 500 0.8rem var(--font-body); cursor: pointer; }
+  .crumbs button:hover { border-color: var(--rule); color: var(--ink); }
+  .crumbs li:last-child button { border-color: var(--rule); color: var(--ink); }
+  .guide-step { display: grid; gap: 0.6rem; }
+  .guide-step .eyebrow { color: var(--accent-ink); }
+  .guide-q { font-size: 1.3rem; font-stretch: 108%; outline: none; }
+  .guide-hint { color: var(--ink-2); font-size: 0.92rem; max-width: var(--measure); }
+  .guide-options { display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); list-style: none; margin: 0.35rem 0 0; padding: 0 !important; }
+  .guide-options li { margin: 0 !important; display: grid; }
+  .guide-opt { display: grid; gap: 0.25rem; align-content: start; text-align: left; padding: 0.85rem 1rem; border: 1px solid var(--rule); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; line-height: 1.45; cursor: pointer; transition: border-color 0.12s ease, background 0.12s ease; }
+  .guide-opt:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .guide-opt strong { font-weight: 620; }
+  .guide-opt span { font-size: 0.86rem; color: var(--ink-2); }
+  .rec { display: grid; gap: 0.7rem; padding: 1.15rem 1.25rem; border-radius: 12px; background: var(--good-soft); box-shadow: inset 0 0 0 1px var(--good); }
+  .rec .eyebrow { color: var(--good); }
+  .rec h3 { font-size: 1.5rem; font-stretch: 110%; outline: none; }
+  .rec-why { color: var(--ink); max-width: var(--measure); }
+  .rec-also { color: var(--ink-2); font-size: 0.92rem; max-width: var(--measure); }
+  .rec .eq { text-align: left; }
+  .rec-links { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .rec-links .btn { white-space: normal; line-height: 1.3; text-align: left; max-width: 100%; }
+  @media (prefers-reduced-motion: no-preference) {
+    .guide[data-animate] .guide-step, .guide[data-animate] .rec { animation: guide-in 0.18s ease-out; }
+    @keyframes guide-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  }
+  /* static tree */
+  .tree svg { min-width: 48rem; }
+  .tree a .dg-text, .tree text a { fill: var(--accent-ink); }
+  .tree a:hover .dg-node-good, .tree a:focus-visible .dg-node-good { stroke-width: 2.25; }
+  .tree text a:hover { text-decoration: underline; }
+  .ovl { text-decoration: overline; text-decoration-thickness: 1px; }
+</style>
+</head>
+<body data-page="chooser">
+<div class="shell">
+<nav class="rail" id="rail"></nav>
+<main class="page" id="main">
+
+<header class="module-head">
+  <div class="head-text">
+    <p class="eyebrow">Reference</p>
+    <h1>Which chart should I use?</h1>
+    <p class="lede">The right control chart depends on what you record, how you sample it and how small a change you need to catch. Answer a few questions and the guide names a chart, explains why it fits and points to the module that teaches it.</p>
+  </div>
+</header>
+
+<section id="guide-section">
+  <h2>Answer a few questions</h2>
+  <p>Each answer narrows the choice. Click any step in the trail to change that answer.</p>
+  <div class="fig guide" id="guide" aria-label="Chart chooser">
+    <ol class="crumbs" id="guide-crumbs" aria-label="Your answers so far"></ol>
+    <div id="guide-stage" aria-live="polite"></div>
+  </div>
+</section>
+
+<section id="tree">
+  <h2>The whole tree</h2>
+  <p>The same decisions on one page. Read from left to right, and click a chart to open its module. Small shifts here means a sustained move of about 1.5 standard deviations or less.</p>
+  <figure class="fig">
+    <div class="diagram tree">
+      <svg viewBox="0 0 1004 630" aria-labelledby="tree-title tree-desc">
+      <title id="tree-title">Decision tree for choosing a control chart</title>
+      <desc id="tree-desc">Measurements branch on the number of variables, independence over time, subgroup size and whether small shifts matter. Counts branch on whether you count defective units or defects and whether the sample size varies. Each leaf links to the module that teaches the chart.</desc>
+      <defs><marker id="aht" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="dg-arrowhead" d="M0,0L10,5L0,10z"/></marker></defs>
+      <path class="dg-edge" d="M132,411.3 H142 V300.5 H200" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="194" y="295.5" text-anchor="end">measure</text>
+      <path class="dg-edge" d="M132,411.3 H142 V522 H200" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="194" y="517" text-anchor="end">count</text>
+      <path class="dg-edge" d="M328,300.5 H338 V229 H384" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="378" y="224" text-anchor="end">one</text>
+      <path class="dg-edge" d="M328,300.5 H338 V372 H384" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="378" y="367" text-anchor="end">many</text>
+      <path class="dg-edge" d="M504,229 H514 V152 H546" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="540" y="147" text-anchor="end">yes</text>
+      <path class="dg-edge" d="M504,229 H514 V306 H844" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="838" y="301" text-anchor="end">no</text>
+      <path class="dg-edge" d="M656,152 H666 V64 H704" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="698" y="59" text-anchor="end">1</text>
+      <path class="dg-edge" d="M656,152 H666 V152 H704" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="698" y="147" text-anchor="end">2–10</text>
+      <path class="dg-edge" d="M656,152 H666 V240 H704" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="698" y="235" text-anchor="end">&gt;10</text>
+      <path class="dg-edge" d="M804,64 H814 V42 H844" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="838" y="37" text-anchor="end">no</text>
+      <path class="dg-edge" d="M804,64 H814 V86 H844" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="838" y="81" text-anchor="end">yes</text>
+      <path class="dg-edge" d="M804,152 H814 V130 H844" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="838" y="125" text-anchor="end">no</text>
+      <path class="dg-edge" d="M804,152 H814 V174 H844" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="838" y="169" text-anchor="end">yes</text>
+      <path class="dg-edge" d="M804,240 H814 V218 H844" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="838" y="213" text-anchor="end">no</text>
+      <path class="dg-edge" d="M804,240 H814 V262 H844" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="838" y="257" text-anchor="end">yes</text>
+      <path class="dg-edge" d="M504,372 H514 V350 H844" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="838" y="345" text-anchor="end">no</text>
+      <path class="dg-edge" d="M504,372 H514 V394 H844" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="838" y="389" text-anchor="end">yes</text>
+      <path class="dg-edge" d="M328,522 H338 V478 H384" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="378" y="473" text-anchor="end">units</text>
+      <path class="dg-edge" d="M328,522 H338 V566 H384" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="378" y="561" text-anchor="end">flaws</text>
+      <path class="dg-edge" d="M504,478 H514 V456 H844" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="838" y="451" text-anchor="end">same</text>
+      <path class="dg-edge" d="M504,478 H514 V500 H844" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="838" y="495" text-anchor="end">varies</text>
+      <path class="dg-edge" d="M504,566 H514 V544 H844" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="838" y="539" text-anchor="end">same</text>
+      <path class="dg-edge" d="M504,566 H514 V588 H844" marker-end="url(#aht)"/>
+      <text class="dg-edge-label" x="838" y="583" text-anchor="end">varies</text>
+      <a class="leaf" href="../modules/04-individuals.html"><rect class="dg-node-good" x="848" y="24" width="150" height="36" rx="9"/>
+      <text class="dg-text" x="860" y="40">Individuals and MR</text>
+      <text class="dg-sub" x="860" y="54">module 4</text></a>
+      <g class="leaf"><rect class="dg-node-good" x="848" y="68" width="150" height="36" rx="9"/>
+      <text class="dg-text" x="860" y="84"><a href="../modules/06-cusum.html">CUSUM</a> or <a href="../modules/07-ewma.html">EWMA</a></text>
+      <text class="dg-sub" x="860" y="98">modules 6 and 7</text></g>
+      <a class="leaf" href="../modules/03-xbar-r-s.html"><rect class="dg-node-good" x="848" y="112" width="150" height="36" rx="9"/>
+      <text class="dg-text" x="860" y="128"><tspan class="ovl">X</tspan> and R</text>
+      <text class="dg-sub" x="860" y="142">module 3</text></a>
+      <g class="leaf"><rect class="dg-node-good" x="848" y="156" width="150" height="36" rx="9"/>
+      <text class="dg-text" x="860" y="172"><a href="../modules/06-cusum.html">CUSUM</a> or <a href="../modules/07-ewma.html">EWMA</a></text>
+      <text class="dg-sub" x="860" y="186">modules 6 and 7</text></g>
+      <a class="leaf" href="../modules/03-xbar-r-s.html"><rect class="dg-node-good" x="848" y="200" width="150" height="36" rx="9"/>
+      <text class="dg-text" x="860" y="216"><tspan class="ovl">X</tspan> and s</text>
+      <text class="dg-sub" x="860" y="230">module 3</text></a>
+      <g class="leaf"><rect class="dg-node-good" x="848" y="244" width="150" height="36" rx="9"/>
+      <text class="dg-text" x="860" y="260"><a href="../modules/06-cusum.html">CUSUM</a> or <a href="../modules/07-ewma.html">EWMA</a></text>
+      <text class="dg-sub" x="860" y="274">modules 6 and 7</text></g>
+      <a class="leaf" href="../modules/11-time-series.html"><rect class="dg-node-good" x="848" y="288" width="150" height="36" rx="9"/>
+      <text class="dg-text" x="860" y="304">Residuals chart</text>
+      <text class="dg-sub" x="860" y="318">module 11</text></a>
+      <a class="leaf" href="../modules/10-multivariate.html"><rect class="dg-node-good" x="848" y="332" width="150" height="36" rx="9"/>
+      <text class="dg-text" x="860" y="348">Hotelling T²</text>
+      <text class="dg-sub" x="860" y="362">module 10</text></a>
+      <a class="leaf" href="../modules/10-multivariate.html"><rect class="dg-node-good" x="848" y="376" width="150" height="36" rx="9"/>
+      <text class="dg-text" x="860" y="392">MEWMA</text>
+      <text class="dg-sub" x="860" y="406">module 10</text></a>
+      <a class="leaf" href="../modules/05-attributes.html#p-chart"><rect class="dg-node-good" x="848" y="438" width="150" height="36" rx="9"/>
+      <text class="dg-text" x="860" y="454">np chart</text>
+      <text class="dg-sub" x="860" y="468">module 5</text></a>
+      <a class="leaf" href="../modules/05-attributes.html#p-chart"><rect class="dg-node-good" x="848" y="482" width="150" height="36" rx="9"/>
+      <text class="dg-text" x="860" y="498">p chart</text>
+      <text class="dg-sub" x="860" y="512">module 5</text></a>
+      <a class="leaf" href="../modules/05-attributes.html#c-chart"><rect class="dg-node-good" x="848" y="526" width="150" height="36" rx="9"/>
+      <text class="dg-text" x="860" y="542">c chart</text>
+      <text class="dg-sub" x="860" y="556">module 5</text></a>
+      <a class="leaf" href="../modules/05-attributes.html#u-chart"><rect class="dg-node-good" x="848" y="570" width="150" height="36" rx="9"/>
+      <text class="dg-text" x="860" y="586">u chart</text>
+      <text class="dg-sub" x="860" y="600">module 5</text></a>
+      <rect class="dg-node" x="708" y="43" width="96" height="42" rx="10"/>
+      <text class="dg-text" x="756" y="61" text-anchor="middle">Small shifts?</text>
+      <text class="dg-sub" x="756" y="76" text-anchor="middle">1.5σ or less</text>
+      <rect class="dg-node" x="708" y="131" width="96" height="42" rx="10"/>
+      <text class="dg-text" x="756" y="149" text-anchor="middle">Small shifts?</text>
+      <text class="dg-sub" x="756" y="164" text-anchor="middle">1.5σ or less</text>
+      <rect class="dg-node" x="708" y="219" width="96" height="42" rx="10"/>
+      <text class="dg-text" x="756" y="237" text-anchor="middle">Small shifts?</text>
+      <text class="dg-sub" x="756" y="252" text-anchor="middle">1.5σ or less</text>
+      <rect class="dg-node" x="550" y="131" width="106" height="42" rx="10"/>
+      <text class="dg-text" x="603" y="149" text-anchor="middle">Subgroup size?</text>
+      <text class="dg-sub" x="603" y="164" text-anchor="middle">n per sample</text>
+      <rect class="dg-node" x="388" y="208" width="116" height="42" rx="10"/>
+      <text class="dg-text" x="446" y="226" text-anchor="middle">Independent?</text>
+      <text class="dg-sub" x="446" y="241" text-anchor="middle">value vs the last</text>
+      <rect class="dg-node" x="388" y="351" width="116" height="42" rx="10"/>
+      <text class="dg-text" x="446" y="369" text-anchor="middle">Small shifts?</text>
+      <text class="dg-sub" x="446" y="384" text-anchor="middle">1.5σ or less</text>
+      <rect class="dg-node" x="204" y="279.5" width="124" height="42" rx="10"/>
+      <text class="dg-text" x="266" y="297.5" text-anchor="middle">Variables?</text>
+      <text class="dg-sub" x="266" y="312.5" text-anchor="middle">watched together</text>
+      <rect class="dg-node" x="388" y="457" width="116" height="42" rx="10"/>
+      <text class="dg-text" x="446" y="475" text-anchor="middle">Same n?</text>
+      <text class="dg-sub" x="446" y="490" text-anchor="middle">units per sample</text>
+      <rect class="dg-node" x="388" y="545" width="116" height="42" rx="10"/>
+      <text class="dg-text" x="446" y="563" text-anchor="middle">Same area?</text>
+      <text class="dg-sub" x="446" y="578" text-anchor="middle">amount inspected</text>
+      <rect class="dg-node" x="204" y="501" width="124" height="42" rx="10"/>
+      <text class="dg-text" x="266" y="519" text-anchor="middle">Counting what?</text>
+      <text class="dg-sub" x="266" y="534" text-anchor="middle">units or flaws</text>
+      <rect class="dg-node-accent" x="4" y="390.3" width="128" height="42" rx="10"/>
+      <text class="dg-text" x="68" y="408.3" text-anchor="middle">Data type?</text>
+      <text class="dg-sub" x="68" y="423.3" text-anchor="middle">measured or counted</text>
+      </svg>
+    </div>
+    <figcaption>CUSUM and EWMA charts work on individual values or on subgroup averages. Keep a Shewhart chart for the same subgroup size running alongside them, because it catches large, sudden shifts sooner.</figcaption>
+  </figure>
+  <p>Two cautions apply to every branch. First, a chart is only as good as its Phase I baseline, so set limits from data that describe the process when it runs as it should. Second, check the assumptions behind the limits: roughly normal data for measurement charts, a stable Poisson or binomial process for attribute charts, and independence over time for both.</p>
+</section>
+
+</main>
+</div>
+</body>
+</html>

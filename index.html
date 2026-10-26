@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>In Control SPC Course</title>
+<meta name="description" content="A free, interactive course in statistical process control: control charts, CUSUM, EWMA, capability, acceptance sampling and multivariate monitoring, built on the NIST/SEMATECH e-Handbook.">
+<script>try{var t=localStorage.getItem('in-control:theme');if(t&&t!=='system')document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="In Control SPC Course">
+<meta property="og:description" content="A free, interactive course in statistical process control: control charts, CUSUM, EWMA, capability, acceptance sampling and multivariate monitoring, built on the NIST/SEMATECH e-Handbook.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap">
+<link rel="stylesheet" href="assets/css/course.css">
+<link rel="stylesheet" href="assets/css/home.css">
+<script type="module" src="assets/js/course.js"></script>
+<script type="module" src="assets/js/home.js"></script>
+</head>
+<body data-page="home">
+<div class="shell">
+  <nav class="rail" id="rail"></nav>
+  <main class="page home" id="main">
+
+    <header class="hero">
+      <p class="eyebrow">In Control · A free course in statistical process control</p>
+      <h1>Learn to tell a signal from&nbsp;noise.</h1>
+      <p class="lede">Twelve interactive modules on control charts, process capability and acceptance sampling, built on chapter 6 of the NIST/SEMATECH e-Handbook of Statistical Methods. Move the sliders, break the process, and watch the charts respond.</p>
+      <div class="hero-actions">
+        <a class="btn primary" href="modules/01-variation.html">Start with module 1</a>
+        <a class="btn" href="#map">See the course map</a>
+      </div>
+    </header>
+
+    <figure class="fig hero-fig wide" aria-labelledby="live-title">
+      <div class="hero-fig-head">
+        <div class="fig-head">
+          <span class="fig-num">Live</span>
+          <h2 class="fig-title" id="live-title">Bottle fill volume, filling line 3</h2>
+        </div>
+        <div class="control-row">
+          <span class="pill ok" id="live-status">In control</span>
+          <button class="btn small" type="button" id="live-toggle" aria-pressed="true">Pause</button>
+        </div>
+      </div>
+      <div class="fig-chart" id="live-chart"></div>
+      <div class="hero-fig-foot">
+        <ul class="legend" id="live-legend"></ul>
+        <p class="fig-note" id="live-note">Watching for the four Western Electric rules.</p>
+      </div>
+      <figcaption>A simulated filling line targeting 500&nbsp;mL. Most of the wiggle is common-cause noise that no one should react to. Every so often the simulation slips in a special cause (a shift, a drift, a jammed nozzle) and a red point marks where the run rules catch it.</figcaption>
+    </figure>
+
+    <section class="map" id="map" aria-labelledby="map-title">
+      <div class="section-head">
+        <h2 id="map-title">Course map</h2>
+        <p>Work through in order, or jump to what you need. Each module takes 20 to 35 minutes and ends with a few quick checks.</p>
+      </div>
+      <div class="parts" id="parts"></div>
+    </section>
+
+    <section class="how" aria-labelledby="how-title">
+      <div class="section-head">
+        <h2 id="how-title">How the course works</h2>
+      </div>
+      <div class="how-grid">
+        <div>
+          <h3>Read the idea</h3>
+          <p>Short explanations in plain language, with the formulas you need to compute every chart by hand.</p>
+        </div>
+        <div>
+          <h3>Break the process</h3>
+          <p>Every figure is a working simulation. Shift the mean, widen the spread or change the sample size and see what the chart notices.</p>
+        </div>
+        <div>
+          <h3>Check yourself</h3>
+          <p>Each module ends with questions that mark themselves. Progress is kept in your browser, with no account and nothing to install.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="source" aria-labelledby="source-title">
+      <div class="source-card">
+        <div>
+          <p class="eyebrow">The source</p>
+          <h2 id="source-title">NIST/SEMATECH e-Handbook of Statistical Methods, chapter 6</h2>
+        </div>
+        <p>The handbook is a public reference written by statisticians at the U.S. National Institute of Standards and Technology with SEMATECH, the semiconductor manufacturing consortium. This course follows its chapter on process and product monitoring, reuses its worked examples where they help, and links each module back to the original sections so you can go deeper.</p>
+        <p><a href="https://www.itl.nist.gov/div898/handbook/pmc/pmc.htm" target="_blank" rel="noopener">Read chapter 6 at nist.gov</a></p>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

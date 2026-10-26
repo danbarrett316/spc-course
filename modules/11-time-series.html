@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en" class="math-pending">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Time series and forecasting · In Control</title>
+<meta name="description" content="Autocorrelation and control charts, moving averages, single, double and triple exponential smoothing, and Box–Jenkins models.">
+<script>try{var t=localStorage.getItem('in-control:theme');if(t&&t!=='system')document.documentElement.dataset.theme=t}catch(e){}setTimeout(function(){document.documentElement.classList.remove('math-pending')},3000)</script>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="Time series and forecasting · In Control">
+<meta property="og:description" content="Autocorrelation and control charts, moving averages, single, double and triple exponential smoothing, and Box–Jenkins models.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap">
+<link rel="stylesheet" href="../assets/css/course.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script type="module" src="../assets/js/course.js"></script>
+<script type="module" src="../assets/js/modules/11-time-series.js"></script>
+</head>
+<body data-module="11">
+<div class="shell">
+<nav class="rail" id="rail"></nav>
+<main class="page" id="main">
+
+<header class="module-head">
+  <h1>Time series and forecasting</h1>
+  <p class="lede">Process data arrive in time order, and neighbouring values are often related. This module shows why that matters for control charts, then builds the handbook's forecasting tools: moving averages, exponential smoothing for level, trend and season, and Box–Jenkins models.</p>
+</header>
+
+<section id="memory">
+  <h2>Data with a memory</h2>
+  <p>A time series is a sequence of measurements of one variable taken at equally spaced times (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc41.htm" target="_blank" rel="noopener">handbook 6.4.1</a>). Hourly reactor temperatures, daily fill weights and monthly sales are all time series. The handbook gives two reasons to model one. A model explains the structure that produced the data, and it lets you forecast, monitor, or feed the result back to control the process.</p>
+  <p>Time order matters for process control because the charts in modules 2 to 7 assume that, while the process is in control, each observation is independent of the last. Many processes break that assumption. A large reactor holds its heat, so a warm hour is usually followed by another warm hour. A tank level, the thickness of successive coils from a rolling mill and the concentration in a continuous blender all carry part of the previous value into the next one. The handbook calls this internal structure, and lists autocorrelation, trend and seasonal variation as its common forms.</p>
+  <p>Autocorrelation at lag <span class="m">k</span> is the correlation between the series and a copy of itself shifted by <span class="m">k</span> periods:</p>
+  <div class="eq">r_k = \frac{\sum_{t=k+1}^{n} (x_t-\bar{x})(x_{t-k}-\bar{x})}{\sum_{t=1}^{n} (x_t-\bar{x})^2}</div>
+  <p>The simplest model with memory is the first-order autoregressive model, AR(1). Each value keeps a fraction <span class="m">\phi</span> of the previous value's distance from the mean, plus fresh random noise <span class="m">a_t</span>:</p>
+  <div class="eq">x_t - \mu = \phi\,(x_{t-1}-\mu) + a_t</div>
+  <p>Its autocorrelation at lag <span class="m">k</span> is <span class="m">\phi^k</span>, so the memory fades geometrically. Now recall the individuals chart from <a href="04-individuals.html">module 4</a>, which estimates σ from the average moving range. When <span class="m">\phi</span> is positive, neighbouring values are close, the moving ranges are small and the estimate comes out too small. It works out to about <span class="m">\sigma_x\sqrt{1-\phi}</span>, where <span class="m">\sigma_x</span> is the true spread of the series. With <span class="m">\phi = 0.8</span> the limits sit at about <span class="m">\pm 1.34\,\sigma_x</span> instead of <span class="m">\pm 3\,\sigma_x</span>, and about 18% of the points from a perfectly stable process fall outside them. When <span class="m">\phi</span> is negative the estimate is too large, and real shifts hide inside limits that are too wide.</p>
+  <p>A standard remedy is to model the time structure and chart what the model cannot predict. If the model is right, its residuals are independent, and an ordinary control chart works on them.</p>
+
+  <figure class="fig" id="fig-ar1">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Autocorrelation fools a standard chart</h3></div>
+    <div class="controls">
+      <label class="control" for="ar-phi">
+        <span class="control-label">Autocorrelation parameter φ <output for="ar-phi"></output></span>
+        <input type="range" id="ar-phi" min="-0.6" max="0.95" step="0.05" value="0.8">
+      </label>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn small" id="ar-new" type="button">New sample</button>
+      </div>
+    </div>
+    <div class="fig-split">
+      <div class="fig-chart" id="ar-raw"></div>
+      <div class="fig-chart" id="ar-acf"></div>
+    </div>
+    <div class="fig-chart" id="ar-resid"></div>
+    <ul class="legend" id="ar-legend"></ul>
+    <div id="ar-readouts"></div>
+    <figcaption>Top left: 100 hourly temperatures from a stable AR(1) process, on an individuals chart with limits from the moving ranges. Top right: the sample autocorrelations, the AR(1) theory <span class="m">\phi^k</span> as a dashed line, and the approximate 95% bounds of ±2/√n. Bottom: the same kind of chart applied to the residuals of a fitted AR(1) model. With φ = 0.8 the raw chart flags about one point in five, and every one is a false alarm, while the residual chart stays quiet. Slide φ to zero and the two charts agree. Slide it below zero and the raw limits grow wider than the data need.</figcaption>
+  </figure>
+
+  <div class="check" id="m11-q1">
+    <p class="check-q">A reactor's hourly temperature has lag-1 autocorrelation 0.8. You put an individuals chart on the raw readings, with σ estimated from the moving ranges. What should you expect while nothing is wrong?</p>
+    <ul class="check-options">
+      <li data-why="The 0.27% rate assumes independent observations. Autocorrelation changes how well the moving ranges estimate σ.">False alarms on about 0.27% of points, as usual</li>
+      <li data-correct>Frequent false alarms, because the moving ranges understate the spread</li>
+      <li data-why="Smooth readings make the moving ranges small, which pulls the limits in and creates more false alarms, not fewer.">Fewer false alarms than usual, because the readings change smoothly</li>
+      <li data-why="Autocorrelation affects any method that treats observations as independent, including control limits.">No effect, because autocorrelation only matters for forecasting</li>
+    </ul>
+    <div class="check-explain"><p>The moving-range estimate is about <span class="m">\sigma\sqrt{1-0.8} = 0.45\,\sigma</span>, so the limits sit near ±1.34σ and roughly 18% of in-control readings fall outside them. Model the autocorrelation and chart the residuals instead.</p></div>
+  </div>
+</section>
+
+<section id="moving-averages">
+  <h2>Averages and moving averages</h2>
+  <p>The handbook builds its forecasting tools from the simplest one upward (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc42.htm" target="_blank" rel="noopener">6.4.2</a>). A warehouse manager records the amounts delivered by 12 suppliers, in thousands of dollars: 9, 8, 9, 12, 9, 12, 11, 7, 13, 9, 11 and 10. Their mean is 10. To judge 10 as an estimate, take each error (actual minus estimate), square it, and average the squares. This <strong>mean squared error</strong> (MSE) is 36/12 = 3. Any other constant does worse: an estimate of 9 gives an MSE of 4, and 12 gives 7.</p>
+  <p>The mean weights every past observation equally, by <span class="m">1/n</span>. That works for a process that scatters around a fixed level and fails for one with a trend, because old values drag the estimate behind.</p>
+  <p>A <strong>single moving average</strong> keeps only the last <span class="m">N</span> values:</p>
+  <div class="eq">M_t = \frac{x_t + x_{t-1} + \cdots + x_{t-N+1}}{N}</div>
+  <p>With <span class="m">N = 3</span> the first average of the supplier data is (9 + 8 + 9)/3 = 8.667, and the handbook's MSE drops to 2.42. Placed at the last period it covers, a moving average trails the data. A <strong>centered moving average</strong> is placed at the middle period instead (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc422.htm" target="_blank" rel="noopener">6.4.2.2</a>). That is easy for odd <span class="m">N</span>. For even <span class="m">N</span> the middle falls between two periods, so the handbook averages each pair of neighbouring moving averages. With <span class="m">N = 4</span> the supplier data give centered values of 9.5, 10.0 and 10.75 at periods 3, 4 and 5.</p>
+  <p>Centering removes the lag, but it uses values from after the period it describes. A centered average can smooth a record of the past and cannot forecast. Neither kind of moving average copes well with a strong trend. The handbook mentions double moving averages for that case and then turns to exponential smoothing.</p>
+</section>
+
+<section id="single-smoothing">
+  <h2>Single exponential smoothing</h2>
+  <p>Exponential smoothing gives recent observations more weight than old ones, with weights that shrink geometrically into the past. The handbook's version of single smoothing (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc431.htm" target="_blank" rel="noopener">6.4.3.1</a>, following Hunter, 1986) starts with <span class="m">S_2 = y_1</span> and then updates</p>
+  <div class="eq">S_t = \alpha\,y_{t-1} + (1-\alpha)\,S_{t-1}, \qquad 0 &lt; \alpha \le 1, \quad t \ge 3</div>
+  <p>Here <span class="m">S_t</span> is the smoothed value for period <span class="m">t</span>. It uses data only up to period <span class="m">t-1</span>, so it serves directly as the forecast of <span class="m">y_t</span>. The EWMA chart in <a href="07-ewma.html">module 7</a> uses Roberts' form of the same recursion, with <span class="m">y_t</span> in place of <span class="m">y_{t-1}</span>. The weights are identical, and module 7 shows how they decay. Substituting the recursion into itself gives</p>
+  <div class="eq">S_t = \alpha \sum_{i=1}^{t-2} (1-\alpha)^{i-1}\, y_{t-i} + (1-\alpha)^{t-2}\, S_2</div>
+  <p>A large <span class="m">\alpha</span> forgets quickly and follows the data closely. A small <span class="m">\alpha</span> remembers far back and smooths heavily. The starting value matters as well, and the smaller <span class="m">\alpha</span> is, the longer its influence lasts. Besides <span class="m">S_2 = y_1</span>, the handbook suggests starting at the process target or at the average of the first four or five observations.</p>
+  <p>To choose <span class="m">\alpha</span>, compute the one-step forecast errors <span class="m">y_t - S_t</span> and pick the value with the smallest MSE. The handbook's example uses 12 observations: 71, 70, 69, 68, 64, 65, 72, 78, 75, 75, 75 and 70. With <span class="m">\alpha = 0.1</span>, the 11 squared errors add up to 208.8 and the MSE is 19.0. The handbook prints 208.94 because it rounds each squared error before adding. For <span class="m">\alpha = 0.5</span> the handbook reports an MSE of 16.29. With the <span class="m">S_2 = y_1</span> start used here the value is 16.50. Small differences like this usually come from how the recursion is started.</p>
+
+  <figure class="fig" id="fig-smooth">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Choosing a smoother for the handbook's series</h3></div>
+    <div class="controls">
+      <label class="control" for="sm-alpha">
+        <span class="control-label">Smoothing constant α <output for="sm-alpha"></output></span>
+        <input type="range" id="sm-alpha" min="0.01" max="1" step="0.01" value="0.1">
+      </label>
+      <label class="control" for="sm-window">
+        <span class="control-label">Moving-average window N <output for="sm-window"></output></span>
+        <input type="range" id="sm-window" min="2" max="6" step="1" value="3">
+      </label>
+      <div class="control-row">
+        <label class="check-inline"><input type="checkbox" id="sm-center"> Center the moving average</label>
+        <button class="btn primary small" id="sm-best" type="button">Find the best α</button>
+      </div>
+    </div>
+    <div class="fig-split">
+      <div class="fig-chart" id="sm-chart"></div>
+      <div class="fig-chart" id="sm-mse"></div>
+    </div>
+    <ul class="legend" id="sm-legend"></ul>
+    <div id="sm-readouts"></div>
+    <details class="data"><summary>Data table: the handbook's series with the smoothed values for the current α</summary><div class="table-wrap" id="sm-table"></div></details>
+    <figcaption>Both smoothed lines are one-step forecasts, so the value plotted at period t uses data only up to period t − 1. The shaded column holds the forecast for period 13. Move α and watch the green line change from sluggish to jumpy. Change the window of the violet moving average, then tick the box to center it. A centered average lines up with the data but uses later values, so it no longer forecasts. Finally press “Find the best α” to trace the MSE for every α from 0.01 to 1.</figcaption>
+  </figure>
+
+  <p>For this series the MSE peaks near <span class="m">\alpha = 0.12</span> and then falls steadily all the way to <span class="m">\alpha = 1</span>, where it is 12.64. At <span class="m">\alpha = 1</span> the forecast for each period is simply the previous observation. That says something about the data. Each value is closer to the one before it than to any long-run average, so the series wanders more than it scatters. That is the positive autocorrelation of the first section, and heavy smoothing throws useful information away. On independent values scattered around a fixed level, the best <span class="m">\alpha</span> would be small.</p>
+  <p>Forecasting is the same recursion run one step further, <span class="m">S_{t+1} = \alpha\,y_t + (1-\alpha)\,S_t</span>, which rearranges to <span class="m">S_{t+1} = S_t + \alpha\,\varepsilon_t</span> (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc432.htm" target="_blank" rel="noopener">6.4.3.2</a>). The new forecast is the old one plus a fraction of the last error. Beyond the end of the data there are no new observations, and the handbook's bootstrap keeps feeding in the last one. With <span class="m">\alpha = 0.1</span>, the last observation 70 and its forecast 71.67, the forecasts for periods 13 and 14 are 71.50 and 71.35.</p>
+
+  <div class="check" id="m11-q2" data-answer="70.44" data-tolerance="0.01">
+    <p class="check-q">Use the handbook's series (71, 70, 69, 68, …) with <span class="m">\alpha = 0.1</span> and <span class="m">S_2 = 71</span>. Compute <span class="m">S_5</span>, the forecast for period 5, to two decimals.</p>
+    <div class="check-explain"><p><span class="m">S_3 = 0.1(70) + 0.9(71) = 70.90</span>, <span class="m">S_4 = 0.1(69) + 0.9(70.90) = 70.71</span>, and <span class="m">S_5 = 0.1(68) + 0.9(70.71) = 70.44</span>, matching the handbook's table. The actual value at period 5 is 64, so the error is −6.44.</p></div>
+  </div>
+
+  <div class="check" id="m11-q3">
+    <p class="check-q">For a series, the MSE of one-step forecasts is lowest when α is close to 1. What does that suggest about the series?</p>
+    <ul class="check-options">
+      <li data-why="For values scattered independently around a fixed level, the best forecast is close to the long-run mean, which needs a small α.">It is random noise around a constant mean</li>
+      <li data-why="A large α means almost no smoothing. Each forecast is close to the latest value.">The smoothing is working well and the series is very stable</li>
+      <li data-correct>Each value is best predicted by the one just before it, so the series wanders</li>
+      <li data-why="Smoother forecasts would have larger errors here, as the MSE curve shows.">α should be reduced so that the forecasts are smoother</li>
+    </ul>
+    <div class="check-explain"><p>With α = 1 the forecast is the previous observation. When that wins, consecutive values are strongly related and the level drifts, which is the positive autocorrelation that also misleads ordinary control limits.</p></div>
+  </div>
+</section>
+
+<section id="double-smoothing">
+  <h2>Following a trend with double smoothing</h2>
+  <p>Single smoothing has one constant and no idea of slope, so on a trending series it lags behind. The handbook's example (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc432.htm" target="_blank" rel="noopener">6.4.3.2</a>) is the series 6.4, 5.6, 7.8, 8.8, 11.0, 11.6, 16.7, 15.3, 21.6, 22.4. With <span class="m">\alpha = 0.3</span>, the forecast for period 10 is 15.4 while the actual value is 22.4.</p>
+  <p>Double exponential smoothing adds a second equation for the trend (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc433.htm" target="_blank" rel="noopener">6.4.3.3</a>):</p>
+  <div class="eq">\begin{aligned} S_t &amp;= \alpha\,y_t + (1-\alpha)(S_{t-1} + b_{t-1}) \\ b_t &amp;= \gamma\,(S_t - S_{t-1}) + (1-\gamma)\,b_{t-1} \end{aligned}</div>
+  <p>The first equation updates the level. Adding the previous slope <span class="m">b_{t-1}</span> to the previous level brings it up to date and removes the lag. The second equation smooths the slope with its own constant <span class="m">\gamma</span>. Unlike single smoothing in the handbook's form, the level here uses the current observation, so forecasts come from the latest level and slope (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc434.htm" target="_blank" rel="noopener">6.4.3.4</a>):</p>
+  <div class="eq">F_{t+m} = S_t + m\,b_t</div>
+  <p>To start, set <span class="m">S_1 = y_1</span>. For <span class="m">b_1</span> the handbook suggests <span class="m">y_2 - y_1</span>, the average of the first three differences, or <span class="m">(y_n - y_1)/(n-1)</span>. Its trend example uses the average of the first three differences, <span class="m">b_1 = 0.8</span>, with <span class="m">\alpha = 0.3623</span> and <span class="m">\gamma = 1.0</span>, the values that minimize the MSE of one-step forecasts. Double smoothing then has an MSE of about 3.7, against about 8.9 for single smoothing even at its best constant, <span class="m">\alpha = 0.977</span>. The forecasts differ in kind as well. Single smoothing projects a flat line near the last value, 22.4. Double smoothing continues the trend with 25.8, 28.7, 31.7, 34.6 and 37.6 for periods 11 to 15.</p>
+
+  <figure class="fig" id="fig-double">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Single and double smoothing on a trend</h3></div>
+    <div class="controls">
+      <label class="control" for="db-alpha">
+        <span class="control-label">Level constant α (both methods) <output for="db-alpha"></output></span>
+        <input type="range" id="db-alpha" min="0.05" max="1" step="0.01" value="0.36">
+      </label>
+      <label class="control" for="db-gamma">
+        <span class="control-label">Trend constant γ (double only) <output for="db-gamma"></output></span>
+        <input type="range" id="db-gamma" min="0" max="1" step="0.05" value="1">
+      </label>
+    </div>
+    <div class="fig-chart" id="db-chart"></div>
+    <ul class="legend" id="db-legend"></ul>
+    <div id="db-readouts"></div>
+    <details class="data"><summary>Data table: the handbook's trend series with both fits</summary><div class="table-wrap" id="db-table"></div></details>
+    <figcaption>Both methods use the same α, so the only difference is the trend equation. Violet is single smoothing and green is double smoothing; both lines are one-step forecasts, and the shaded area holds five forecasts beyond the data. At period 10 single smoothing trails the data by about 6, and its forecasts stay flat. Lower γ to make the slope estimate sluggish. Raise α to see single smoothing chase the data more closely without ever catching up.</figcaption>
+  </figure>
+
+  <div class="check" id="m11-q4" data-answer="31.7" data-tolerance="0.06">
+    <p class="check-q">The handbook's double smoothing fit ends at period 10 with level <span class="m">S_{10} = 22.82</span> and slope <span class="m">b_{10} = 2.96</span>. What is its forecast for period 13?</p>
+    <div class="check-explain"><p>Period 13 is three periods ahead, so <span class="m">F_{13} = S_{10} + 3\,b_{10} = 22.82 + 3(2.96) = 31.70</span>. The handbook lists 31.7.</p></div>
+  </div>
+</section>
+
+<section id="holt-winters">
+  <h2>Seasons and triple smoothing</h2>
+  <p>Many series repeat a pattern every season. Retail sales peak before the holidays, and energy use rises every winter. Holt–Winters smoothing (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc435.htm" target="_blank" rel="noopener">6.4.3.5</a>) adds a third equation for a seasonal index <span class="m">I_t</span>, with <span class="m">L</span> periods per season:</p>
+  <div class="eq">\begin{aligned} S_t &amp;= \alpha\,\frac{y_t}{I_{t-L}} + (1-\alpha)(S_{t-1} + b_{t-1}) \\ b_t &amp;= \gamma\,(S_t - S_{t-1}) + (1-\gamma)\,b_{t-1} \\ I_t &amp;= \beta\,\frac{y_t}{S_t} + (1-\beta)\,I_{t-L} \\ F_{t+m} &amp;= (S_t + m\,b_t)\,I_{t-L+m} \end{aligned}</div>
+  <p>Dividing by the seasonal index takes the season out before the level is updated, and multiplying by it puts the season back into the forecast. In the handbook's notation <span class="m">\beta</span> smooths the seasonal indices and <span class="m">\gamma</span> smooths the trend. C.&nbsp;C. Holt proposed exponential smoothing in 1957 and extended it to trends in 1958, and Winters added seasons in 1965.</p>
+  <p>Starting the recursion needs at least one full season, and preferably two to estimate the trend. The handbook's example is six years of quarterly sales, 1990 to 1995, so <span class="m">L = 4</span>. The initial trend averages the change from the first year to the second in each quarter:</p>
+  <div class="eq">b_1 = \frac{1}{4}\left(\frac{382-362}{4} + \frac{409-385}{4} + \frac{498-432}{4} + \frac{387-341}{4}\right) = \frac{5 + 6 + 16.5 + 11.5}{4} = 9.75</div>
+  <p>For the seasonal indices, the handbook divides each observation by the average of its year (380, 419, 510.5, 591, 675 and 716.75), then averages those ratios quarter by quarter. That gives starting indices of 0.919, 1.006, 1.159 and 0.915, so the third quarter typically runs about 16% above its year's average.</p>
+
+  <div class="check" id="m11-q5" data-answer="1.19" data-tolerance="0.01">
+    <p class="check-q">In 1991 the quarterly sales were 382, 409, 498 and 387, an average of 419. What is the third-quarter ratio <span class="m">y_7/A_2</span> that goes into the initial Q3 index? Give two decimals.</p>
+    <div class="check-explain"><p><span class="m">498/419 = 1.19</span>, so the third quarter of 1991 ran 19% above that year's average. Averaging the six third-quarter ratios, one per year, gives the starting Q3 index of 1.159.</p></div>
+  </div>
+
+  <figure class="fig" id="fig-hw">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Holt–Winters forecasts for quarterly sales</h3></div>
+    <div class="controls">
+      <label class="control" for="hw-alpha">
+        <span class="control-label">Level α <output for="hw-alpha"></output></span>
+        <input type="range" id="hw-alpha" min="0" max="1" step="0.01" value="0.76">
+      </label>
+      <label class="control" for="hw-beta">
+        <span class="control-label">Season β <output for="hw-beta"></output></span>
+        <input type="range" id="hw-beta" min="0" max="1" step="0.01" value="0.98">
+      </label>
+      <label class="control" for="hw-gamma">
+        <span class="control-label">Trend γ <output for="hw-gamma"></output></span>
+        <input type="range" id="hw-gamma" min="0" max="1" step="0.01" value="0">
+      </label>
+      <div class="control">
+        <span class="control-label">Forecast ahead</span>
+        <div class="seg" id="hw-h">
+          <button data-value="4">4 quarters</button>
+          <button data-value="8" aria-pressed="true">8 quarters</button>
+        </div>
+      </div>
+      <div class="control-row">
+        <button class="btn primary small" id="hw-fit" type="button">Fit by least MSE</button>
+        <button class="btn small" id="hw-reset" type="button">Handbook values</button>
+      </div>
+    </div>
+    <div class="fig-chart" id="hw-chart"></div>
+    <ul class="legend" id="hw-legend"></ul>
+    <div id="hw-readouts"></div>
+    <details class="data"><summary>Data table: the handbook's quarterly sales with one-step forecasts</summary><div class="table-wrap" id="hw-table"></div></details>
+    <figcaption>Blue is the handbook's quarterly sales, violet the one-step forecasts, and green the forecasts beyond 1995 with the season built in. The sliders start at the constants the handbook's software chose, α = 0.76, β = 0.98 and γ = 0. Set β to zero to freeze the starting seasonal indices, and raise γ to let the trend respond to recent growth. Press “Fit by least MSE” to search all three constants for the smallest MSE with this course's start-up, which begins the recursion at the first quarter.</figcaption>
+  </figure>
+
+  <p>The season is what single and double smoothing miss in these data. With the start-up used here, the best MSE for single smoothing is about 6,900, as the handbook reports. Holt–Winters brings it down to about 850 or 900, depending on the constants, a reduction by a factor of about eight. The exact optimum depends on how the recursion is started, which the handbook leaves to software. The handbook also warns against reading too much into a fitted constant of zero. A fitted trend constant of zero only means that the starting trend was already good enough that updating it did not reduce the MSE. The series can still have a trend.</p>
+</section>
+
+<section id="box-jenkins">
+  <h2>Box–Jenkins models</h2>
+  <p>Smoothing methods are recipes. Box–Jenkins models, popularized by George Box and Gwilym Jenkins in <em>Time Series Analysis: Forecasting and Control</em>, describe the dependence in a series directly and give a systematic way to choose, fit and check a model (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc44.htm" target="_blank" rel="noopener">handbook 6.4.4</a>).</p>
+  <p>The models assume a <strong>stationary</strong> series, one whose mean, variance and autocorrelation do not change over time. A run-sequence plot usually shows whether that holds. If the series trends, difference it by replacing each value with its change from the previous one, <span class="m">Y_t = Z_t - Z_{t-1}</span>. One difference is usually enough. Fitting and subtracting a straight line also works, and a log or square-root transform can steady a variance that grows with the level. Seasonality shows up as a repeating pattern in a run-sequence or seasonal subseries plot, and as peaks in the autocorrelation at multiples of the period. A seasonal difference or seasonal terms in the model handle it.</p>
+  <p>Two building blocks describe the dependence. An <strong>autoregressive</strong> model of order <span class="m">p</span>, AR(<span class="m">p</span>), regresses the current value on the previous <span class="m">p</span> values. A <strong>moving average</strong> model of order <span class="m">q</span>, MA(<span class="m">q</span>), writes it in terms of the current and previous <span class="m">q</span> random shocks. This moving average is a different idea from the smoothing average of <a href="#moving-averages">section 11.2</a>. Combining the two gives the ARMA model:</p>
+  <div class="eq">X_t = \delta + \phi_1 X_{t-1} + \cdots + \phi_p X_{t-p} + A_t - \theta_1 A_{t-1} - \cdots - \theta_q A_{t-q}</div>
+  <dl class="where">
+    <dt><span class="m">A_t</span></dt><dd>white noise, meaning independent random shocks with mean zero and constant variance</dd>
+    <dt><span class="m">\phi_i</span></dt><dd>autoregressive coefficients</dd>
+    <dt><span class="m">\theta_j</span></dt><dd>moving-average coefficients</dd>
+    <dt><span class="m">\delta</span></dt><dd>a constant, equal to <span class="m">(1 - \phi_1 - \cdots - \phi_p)\,\mu</span> where <span class="m">\mu</span> is the process mean</dd>
+  </dl>
+  <p>A model fitted to a differenced series is called ARIMA, where the I stands for integrated. Building one runs in three stages.</p>
+  <ol class="steps">
+    <li><span><strong>Identification.</strong> Make the series stationary, then compare its sample autocorrelation function (ACF) and partial autocorrelation function (PACF) with the patterns in the table below. The partial autocorrelation at lag <span class="m">k</span> is the correlation that remains after the effects of lags 1 to <span class="m">k-1</span> are removed. Values inside about <span class="m">\pm 2/\sqrt{n}</span> are consistent with zero.</span></li>
+    <li><span><strong>Estimation.</strong> Fit the coefficients with software, by nonlinear least squares or, preferably, maximum likelihood.</span></li>
+    <li><span><strong>Diagnostics.</strong> Check that the residuals look like white noise, with no pattern over time, constant spread and no autocorrelation. The Ljung–Box statistic tests many residual autocorrelations at once. If the residuals fail, go back to identification.</span></li>
+  </ol>
+  <div class="table-scroll">
+    <table class="ref">
+      <thead><tr><th>Shape of the sample ACF</th><th>Model it suggests</th></tr></thead>
+      <tbody>
+        <tr><td>Decays exponentially to zero</td><td>Autoregressive; read the order from the PACF</td></tr>
+        <tr><td>Alternates in sign while decaying to zero</td><td>Autoregressive; read the order from the PACF</td></tr>
+        <tr><td>One or more spikes, then essentially zero</td><td>Moving average; the order is the last lag with a spike</td></tr>
+        <tr><td>Decays, but only after a few lags</td><td>Mixed autoregressive and moving average</td></tr>
+        <tr><td>All close to zero</td><td>Essentially random data</td></tr>
+        <tr><td>High values at fixed intervals</td><td>Include a seasonal autoregressive term</td></tr>
+        <tr><td>Does not decay to zero</td><td>Not stationary; difference the series</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>For an AR(<span class="m">p</span>) process the PACF drops to zero after lag <span class="m">p</span>, which is how its order is read. Mixed models are hard to identify by eye, and the handbook notes that criteria such as AIC are increasingly used to help. Box–Jenkins fitting also needs a reasonably long series. The handbook cites a minimum of 50 observations, and many analysts want 100.</p>
+  <p>The handbook's worked example (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc449.htm" target="_blank" rel="noopener">6.4.4.9</a>) is series F from Box and Jenkins, 70 consecutive yields from a batch chemical process. The series shows no trend or season. Its autocorrelations alternate in sign and die out quickly, −0.390 at lag 1 and 0.304 at lag 2, which points to an autoregressive model. The handbook fits an AR(2) model about the series mean of 51.13, with <span class="m">\phi_1 = -0.320</span> and <span class="m">\phi_2 = 0.180</span>, and forecasts a yield of 60.64 for batch 71.</p>
+
+  <figure class="fig" id="fig-bj">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Identifying and checking a model for series F</h3></div>
+    <div class="controls">
+      <div class="control">
+        <span class="control-label">Show</span>
+        <div class="seg" id="bj-view">
+          <button data-value="acf" aria-pressed="true">ACF</button>
+          <button data-value="pacf">PACF</button>
+          <button data-value="res1">Residuals of AR(1)</button>
+          <button data-value="res2">Residuals of AR(2)</button>
+        </div>
+      </div>
+    </div>
+    <div class="fig-split">
+      <div class="fig-chart" id="bj-series"></div>
+      <div class="fig-chart" id="bj-acf"></div>
+    </div>
+    <ul class="legend" id="bj-legend"></ul>
+    <div id="bj-readouts"></div>
+    <details class="data"><summary>Data table: series F, 70 batch yields</summary><div class="table-wrap" id="bj-table"></div></details>
+    <figcaption>The left panel shows the 70 yields, and the right panel the chosen autocorrelation plot with bounds of ±2/√n. Start with the ACF. Lags 1 and 2 stand outside the bounds with alternating signs. Switch to the PACF. Only lag 1 clearly exceeds the bounds, and lag 2 (0.18) sits inside them. Then compare the residuals of the two models, both fitted with the Yule–Walker equations, which reproduce the handbook's coefficients. Both leave every residual autocorrelation inside the bounds and pass the Ljung–Box test.</figcaption>
+  </figure>
+
+  <p>So which model is right? The AR(2) residuals are slightly cleaner at lag 2, and its coefficients match the handbook's. Its second coefficient is only about 1.5 standard errors from zero, though (the handbook reports 0.1797 with a standard error of 0.1202), so a simpler AR(1) model would also be defensible. Identification often comes down to judgment like this, backed by the residual checks.</p>
+  <p>For process control, the payoff is in the residuals. Once a model captures the autocorrelation, its one-step forecast errors are independent, and an individuals, EWMA or CUSUM chart can watch them with the usual false-alarm rates, as the residual chart in the first figure did. A special cause then shows up as a forecast error that the model cannot explain.</p>
+
+  <div class="check" id="m11-q6">
+    <p class="check-q">A stationary series has a sample ACF with one large spike at lag 1 and values inside ±2/√n at every later lag. Its PACF decays gradually. Which model does the handbook's table suggest?</p>
+    <ul class="check-options">
+      <li data-why="An AR(1) process has an ACF that decays geometrically. It is the PACF of an AR(1) that cuts off after lag 1.">AR(1)</li>
+      <li data-why="Seasonality appears as spikes at fixed intervals, such as lags 4, 8 and 12, not a single spike at lag 1.">A seasonal model</li>
+      <li data-why="A non-stationary series has an ACF that fails to decay. Here it drops to zero after lag 1.">A non-stationary series that needs differencing</li>
+      <li data-correct>MA(1)</li>
+    </ul>
+    <div class="check-explain"><p>The ACF of an MA(<span class="m">q</span>) process is zero beyond lag <span class="m">q</span>, so a single spike at lag 1 means <span class="m">q = 1</span>. A gradually decaying PACF fits the same picture.</p></div>
+  </div>
+</section>
+
+<section id="summary" class="summary">
+  <h2>Takeaways</h2>
+  <ul>
+    <li>Control limits assume independent observations. Positive autocorrelation shrinks moving-range limits and floods a chart with false alarms, so model the time structure and chart the residuals.</li>
+    <li>The mean weights all past data equally. A moving average keeps the last N values; centering it removes the lag but also the ability to forecast.</li>
+    <li>Single exponential smoothing weights the past geometrically. Choose α by minimizing the MSE of one-step forecasts, and remember that the starting value matters.</li>
+    <li>Double smoothing adds a smoothed slope for trends, and Holt–Winters adds seasonal indices for repeating patterns.</li>
+    <li>Box–Jenkins modelling makes the series stationary, identifies AR and MA terms from the ACF and PACF, estimates them with software, and checks that the residuals are white noise.</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en" class="math-pending">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Case study: a lithography process · In Control</title>
+<meta name="description" content="A capstone case study from the NIST/SEMATECH handbook: line widths from a semiconductor lithography step, three nested sources of variation, and the control charts that fit a batch process.">
+<script>try{var t=localStorage.getItem('in-control:theme');if(t&&t!=='system')document.documentElement.dataset.theme=t}catch(e){}setTimeout(function(){document.documentElement.classList.remove('math-pending')},3000)</script>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="Case study: a lithography process · In Control">
+<meta property="og:description" content="A capstone case study from the NIST/SEMATECH handbook: line widths from a semiconductor lithography step, three nested sources of variation, and the control charts that fit a batch process.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap">
+<link rel="stylesheet" href="../assets/css/course.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script type="module" src="../assets/js/course.js"></script>
+<script type="module" src="../assets/js/modules/12-case-study.js"></script>
+</head>
+<body data-module="12">
+<div class="shell">
+<nav class="rail" id="rail"></nav>
+<main class="page" id="main">
+
+<header class="module-head">
+  <h1>Case study: a lithography process</h1>
+  <p class="lede">Wafers move through a lithography step in cassettes, and every line-width reading carries the marks of its cassette, its wafer and its site. This capstone follows the handbook's lithography study from the first plots to a set of charts and an action plan that fit a batch process.</p>
+</header>
+
+<section id="process">
+  <h2>The process and the data</h2>
+  <p>Lithography prints a circuit pattern onto a silicon wafer. The wafer is coated with a light-sensitive resist, exposed to light through a patterned mask, and developed, which leaves lines of resist that later steps etch into the layers below. The width of those lines matters because the printed pattern becomes the circuit. Lines that come out too wide or too narrow change how the finished device behaves.</p>
+  <p>Wafers travel in batches. A cassette carries a batch of about 25 wafers through each step, and every wafer in it sees the same recipe, the same chemicals and the same moment in the tool's day. The handbook's study measured line width on 3 wafers from each of 30 cassettes, at 5 sites on each wafer, for 450 readings in all. The handbook calls the sites Top, Lef, Cen, Rgt and Bot.</p>
+
+  <figure class="fig" id="fig-design">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Five sites on each wafer, three wafers from each cassette</h3></div>
+    <div class="diagram">
+      <svg viewBox="0 0 760 330" role="img" aria-label="Left: a wafer map with the five measurement sites Top, Left, Center, Right and Bottom, labelled with their average line width in the simulated data. Right: a tree in which one cassette branches into three wafers and each wafer into five sites, with the handbook's variance component for each level.">
+        <defs><marker id="ah12" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="dg-arrowhead" d="M0,0L10,5L0,10z"/></marker></defs>
+        <circle class="dg-node" cx="170" cy="170" r="140"/>
+        <g id="wafer-dies"></g>
+        <path class="dg-edge" d="M162,309 L170,300 L178,309"/>
+        <circle class="dg-node-accent" cx="170" cy="70" r="9"/>
+        <circle class="dg-node-accent" cx="70" cy="170" r="9"/>
+        <circle class="dg-node-accent" cx="170" cy="170" r="9"/>
+        <circle class="dg-node-accent" cx="270" cy="170" r="9"/>
+        <circle class="dg-node-accent" cx="170" cy="270" r="9"/>
+        <text class="dg-text" x="184" y="68">Top</text><text class="dg-sub" x="184" y="83" id="wm-top">avg</text>
+        <text class="dg-text" x="84" y="168">Lef</text><text class="dg-sub" x="84" y="183" id="wm-lef">avg</text>
+        <text class="dg-text" x="184" y="168">Cen</text><text class="dg-sub" x="184" y="183" id="wm-cen">avg</text>
+        <text class="dg-text" x="284" y="168">Rgt</text><text class="dg-sub" x="284" y="183" id="wm-rgt">avg</text>
+        <text class="dg-text" x="184" y="268">Bot</text><text class="dg-sub" x="184" y="283" id="wm-bot">avg</text>
+
+        <text class="dg-text" x="378" y="50">Cassette</text>
+        <text class="dg-sub" x="378" y="66">variance 0.2645</text>
+        <text class="dg-text" x="378" y="146">Wafer</text>
+        <text class="dg-sub" x="378" y="162">variance 0.0500</text>
+        <text class="dg-text" x="378" y="238">Site</text>
+        <text class="dg-sub" x="378" y="254">variance 0.1755</text>
+
+        <rect class="dg-node" x="530" y="26" width="170" height="44" rx="10"/>
+        <text class="dg-text" x="615" y="53" text-anchor="middle">One cassette (lot)</text>
+        <path class="dg-edge" d="M615,70 L533,124" marker-end="url(#ah12)"/>
+        <path class="dg-edge" d="M615,70 V122" marker-end="url(#ah12)"/>
+        <path class="dg-edge" d="M615,70 L697,124" marker-end="url(#ah12)"/>
+        <circle class="dg-node" cx="525" cy="150" r="24"/><text class="dg-text" x="525" y="155" text-anchor="middle">W1</text>
+        <circle class="dg-node" cx="615" cy="150" r="24"/><text class="dg-text" x="615" y="155" text-anchor="middle">W2</text>
+        <circle class="dg-node" cx="705" cy="150" r="24"/><text class="dg-text" x="705" y="155" text-anchor="middle">W3</text>
+        <path class="dg-edge" d="M525,174 L493,226 M525,174 L509,226 M525,174 V226 M525,174 L541,226 M525,174 L557,226"/>
+        <path class="dg-edge" d="M615,174 L583,226 M615,174 L599,226 M615,174 V226 M615,174 L631,226 M615,174 L647,226"/>
+        <path class="dg-edge" d="M705,174 L673,226 M705,174 L689,226 M705,174 V226 M705,174 L721,226 M705,174 L737,226"/>
+        <g>
+          <circle class="dg-node-accent" cx="493" cy="232" r="6"/><circle class="dg-node-accent" cx="509" cy="232" r="6"/><circle class="dg-node-accent" cx="525" cy="232" r="6"/><circle class="dg-node-accent" cx="541" cy="232" r="6"/><circle class="dg-node-accent" cx="557" cy="232" r="6"/>
+          <circle class="dg-node-accent" cx="583" cy="232" r="6"/><circle class="dg-node-accent" cx="599" cy="232" r="6"/><circle class="dg-node-accent" cx="615" cy="232" r="6"/><circle class="dg-node-accent" cx="631" cy="232" r="6"/><circle class="dg-node-accent" cx="647" cy="232" r="6"/>
+          <circle class="dg-node-accent" cx="673" cy="232" r="6"/><circle class="dg-node-accent" cx="689" cy="232" r="6"/><circle class="dg-node-accent" cx="705" cy="232" r="6"/><circle class="dg-node-accent" cx="721" cy="232" r="6"/><circle class="dg-node-accent" cx="737" cy="232" r="6"/>
+        </g>
+        <text class="dg-sub" x="615" y="272" text-anchor="middle">5 sites × 3 wafers = 15 readings per cassette</text>
+        <text class="dg-sub" x="615" y="290" text-anchor="middle">× 30 cassettes = 450 readings</text>
+      </svg>
+    </div>
+    <figcaption>Left: the five measurement sites on a wafer, each labelled with its average line width in this module's simulated data. Right: how the readings nest. Each reading belongs to exactly one wafer, and each wafer to exactly one cassette. The variances are the handbook's estimates of how much each level adds, which <a href="#components">section 12.4</a> explains.</figcaption>
+  </figure>
+
+  <p>That nesting is the whole story of this case. A reading from the Top site of wafer 2 in cassette 14 shares its cassette's conditions with 14 other readings and its wafer's conditions with 4 others. Shewhart's charts assume that each reading scatters around the process mean because of one layer of common-cause noise. Here there are three layers, stacked.</p>
+
+  <div class="from-nist"><span class="eyebrow">Handbook 6.6.1.1</span><p>The handbook introduces the study as a lithography step in which batch processing creates several sources of variation, and notes that the classical Shewhart charts were built for a single source. It lists the data as cassette, wafer, site, raw line width and run sequence. <a href="https://www.itl.nist.gov/div898/handbook/pmc/section6/pmc611.htm" target="_blank" rel="noopener">Read the background</a>.</p></div>
+
+  <p><strong>The data in this module are simulated.</strong> The handbook's data file is not reproduced here. Every figure uses a dataset generated from the handbook's design (30 cassettes, 3 wafers, 5 sites) and its variance components, with the same overall mean and a fixed site pattern like the one in the real data, where the Top site reads high and the Center site reads low. The simulation is seeded, so the numbers are the same on every visit, and its summaries land close to the handbook's.</p>
+  <details class="data"><summary>Simulated data table (450 readings)</summary><div class="table-wrap" id="litho-table"></div></details>
+</section>
+
+<section id="look">
+  <h2>Look before you chart</h2>
+  <p>Before it computes a single control limit, the handbook plots the data. It starts with the readings in the order they were measured, then breaks them out by cassette, by wafer and by site. Each plot asks whether that factor moves the line width.</p>
+
+  <figure class="fig" id="fig-run">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">All 450 simulated readings in measurement order</h3></div>
+    <div class="controls">
+      <div class="control">
+        <span class="control-label">Highlight a site</span>
+        <div class="seg" id="run-site">
+          <button data-value="all" aria-pressed="true">All</button>
+          <button data-value="Top">Top</button>
+          <button data-value="Lef">Lef</button>
+          <button data-value="Cen">Cen</button>
+          <button data-value="Rgt">Rgt</button>
+          <button data-value="Bot">Bot</button>
+        </div>
+      </div>
+      <div class="control-row">
+        <label class="check-inline"><input type="checkbox" id="run-means"> Show cassette means</label>
+      </div>
+    </div>
+    <div class="fig-chart" id="run-chart"></div>
+    <ul class="legend" id="run-legend"></ul>
+    <div id="run-readouts"></div>
+    <figcaption>Each block of 15 readings is one cassette, and every second cassette is shaded. Turn on the cassette means and watch the level jump from one cassette to the next. Then highlight Top and Cen. Top tends to sit above the other sites on the same wafer and Center below them. The readouts compare the simulated summary with the handbook's.</figcaption>
+  </figure>
+
+  <p>The run plot shows what the handbook found in the real data. Neither the level nor the spread is constant over time, and neighbouring readings resemble each other. That resemblance is expected, because readings arrive in blocks of 5 from a wafer and 15 from a cassette, and neighbours share conditions.</p>
+  <p>Box plots make the comparison one factor at a time. Each box covers the middle half of a group's readings and the line inside it marks the median. The whiskers reach the most extreme readings within one and a half box lengths, and hollow dots mark anything beyond.</p>
+
+  <figure class="fig" id="fig-box">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Which factor moves the line width?</h3></div>
+    <div class="controls">
+      <div class="control">
+        <span class="control-label">Right panel</span>
+        <div class="seg" id="box-by">
+          <button data-value="site" aria-pressed="true">By site</button>
+          <button data-value="wafer">By wafer position</button>
+        </div>
+      </div>
+    </div>
+    <div class="fig-split">
+      <div class="fig-chart" id="box-cas"></div>
+      <div class="fig-chart" id="box-other"></div>
+    </div>
+    <div id="box-readouts"></div>
+    <figcaption>Left: one box per cassette. Right: the same 450 readings grouped by site, or by the wafer's position (1, 2 or 3) within its cassette. Both panels share a vertical scale. The cassette medians wander over a range of more than 2, the site medians over less than 1, and the three wafer positions barely differ.</figcaption>
+  </figure>
+
+  <p>The handbook reads its real plots the same way. Cassette medians range from about 1.7 to 4, the Center site has a lower median than the others, and the three wafer positions look alike, so the handbook treats wafer position as homogeneous. Wafer position has no systematic effect. Wafers in the same cassette still differ from each other at random, and <a href="#components">section 12.4</a> measures by how much.</p>
+
+  <div class="check" id="m12-q1">
+    <p class="check-q">Judging by the box plots, which factor moves the line width the most?</p>
+    <ul class="check-options">
+      <li data-why="Sites do differ: Top reads high and Center reads low. But the site medians span less than 1, while the cassette medians span more than 2.">The site on the wafer</li>
+      <li data-why="The three wafer positions have almost the same median. Position within the cassette barely matters.">The wafer's position in the cassette</li>
+      <li data-correct>The cassette</li>
+      <li data-why="The differences between cassettes are far larger than the scatter inside a cassette, so they are not noise you can ignore.">None of them, since the differences look like noise</li>
+    </ul>
+    <div class="check-explain"><p>Cassette medians run from about 1.6 to 3.8 in the simulated data, and from about 1.7 to 4 in the handbook's. Whole lots run high or low, and that lot-to-lot movement is the largest effect in the data. Any chart for this process has to deal with it.</p></div>
+  </div>
+</section>
+
+<section id="naive">
+  <h2>A standard chart, and why it fails</h2>
+  <p>A quality engineer's first instinct is to treat each wafer as a subgroup of five and draw an X̄ and s chart (<a href="03-xbar-r-s.html">module 3</a>). The handbook tries that and two other subgroupings: each site reading on its own, charted as individuals with moving ranges (<a href="04-individuals.html">module 4</a>), and each cassette as a subgroup of 15.</p>
+
+  <figure class="fig" id="fig-naive">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Standard Shewhart charts on the simulated data</h3></div>
+    <div class="controls">
+      <div class="control">
+        <span class="control-label">Subgroup</span>
+        <div class="seg" id="naive-sub">
+          <button data-value="site">Site (n = 1)</button>
+          <button data-value="wafer" aria-pressed="true">Wafer (n = 5)</button>
+          <button data-value="cassette">Cassette (n = 15)</button>
+        </div>
+      </div>
+    </div>
+    <div class="fig-chart" id="naive-mean"></div>
+    <div class="fig-chart" id="naive-spread"></div>
+    <ul class="legend" id="naive-legend"></ul>
+    <div id="naive-readouts"></div>
+    <figcaption>Top: the subgroup means (or the readings themselves when n = 1) with the usual three-sigma limits, computed from the variation inside each subgroup. Bottom: the matching spread chart. Every second cassette is shaded. With wafer subgroups a third of the wafer means fall outside the limits, and wafers from the same cassette tend to fall on the same side. With cassette subgroups, half the lots signal. The s charts stay quiet.</figcaption>
+  </figure>
+
+  <p>The handbook's charts of the real data look the same, with many points beyond the limits on every mean chart and no signals on the standard deviation charts. A special cause in every second cassette is not believable. The chart is the problem.</p>
+  <p>The limits on an X̄ chart come from the variation inside the subgroups. For a wafer subgroup, s measures how much the five sites on one wafer differ from each other, so the limits allow for site-to-site variation only. The wafer means themselves move for three reasons: their cassette, their wafer, and the average of five site deviations. With the handbook's variance components,</p>
+  <div class="eq">\begin{aligned}
+\operatorname{Var}(\bar{x}_{\text{wafer}}) &= \sigma_C^2 + \sigma_W^2 + \frac{\sigma_S^2}{5} = 0.2645 + 0.0500 + 0.0351 = 0.3496 \\
+\text{variance the limits assume} &= \frac{\sigma_S^2}{5} = 0.0351
+\end{aligned}</div>
+  <p>The wafer means vary about ten times as much as the limits expect, so their standard deviation is about 3.2 times larger. The limits at <span class="m">\pm 3\sigma_S/\sqrt{5} = \pm 0.56</span> sit less than one true standard deviation (0.59) from the center line, and about a third of perfectly ordinary wafer means land outside them.</p>
+
+  <div class="key-idea">
+    <span class="eyebrow">Key idea</span>
+    <p>An X̄ chart judges subgroup means against the variation inside the subgroups. When a layer of normal variation sits between subgroups, as cassette-to-cassette variation does in a batch process, the limits leave it out and the chart flags ordinary subgroups. The handbook points out that setting limits this way suits continuous processing and causes trouble with batches.</p>
+  </div>
+
+  <div class="check" id="m12-q2">
+    <p class="check-q">On the X̄ chart with wafer subgroups, a third of the wafer means fall outside the limits, yet the s chart is quiet. What is the best explanation?</p>
+    <ul class="check-options">
+      <li data-why="A special cause in that many cassettes would be an extraordinary run of bad luck. The same pattern appears whenever cassette-to-cassette variation is part of normal running.">Most cassettes had a special cause</li>
+      <li data-correct>The limits come from site-to-site variation within a wafer, which leaves out the cassette and wafer variation that moves every wafer mean</li>
+      <li data-why="Five readings is a normal subgroup size for an X̄ chart. Larger subgroups would make the limits narrower still.">Subgroups of five are too small</li>
+      <li data-why="Within a wafer the readings are close to normal, and mild nonnormality cannot push a third of the points outside the limits.">The line widths are not normally distributed</li>
+    </ul>
+    <div class="check-explain"><p>The s chart is quiet because the spread inside each wafer is stable. The X̄ chart fails because its limits are built from that same within-wafer spread, while the wafer means also carry cassette and wafer variation. The plotted points vary about three times more widely than the limits allow for.</p></div>
+  </div>
+</section>
+
+<section id="components">
+  <h2>Three sources of variation</h2>
+  <p>To decide what the limits should include, the engineer needs to know how much variation each layer adds. The handbook gets this from a <strong>nested random-effects analysis of variance</strong>. Nested means each wafer belongs to one cassette only, so wafer 1 of cassette 3 has nothing to do with wafer 1 of cassette 7. Random effects means the 30 cassettes are treated as a sample of all the cassettes the line will ever run, and the analysis estimates how much cassettes vary in general.</p>
+  <div class="eq">y_{ijk} = \mu + C_i + W_{j(i)} + S_{k(ij)}</div>
+  <dl class="where">
+    <dt><span class="m">y_{ijk}</span></dt><dd>line width at site <span class="m">k</span> of wafer <span class="m">j</span> in cassette <span class="m">i</span></dd>
+    <dt><span class="m">C_i</span></dt><dd>cassette effect, with variance <span class="m">\sigma_C^2</span></dd>
+    <dt><span class="m">W_{j(i)}</span></dt><dd>effect of wafer <span class="m">j</span> within cassette <span class="m">i</span>, with variance <span class="m">\sigma_W^2</span></dd>
+    <dt><span class="m">S_{k(ij)}</span></dt><dd>site-to-site deviation within a wafer, with variance <span class="m">\sigma_S^2</span> (this includes the fixed site pattern)</dd>
+  </dl>
+  <p>Each mean square in the analysis mixes several components, because a cassette mean also carries the wafer and site variation of the 15 readings inside it. The expected mean squares spell out the mixture:</p>
+  <div class="eq">\begin{aligned}
+\text{MS}_{\text{cassette}} &= 15\,\sigma_C^2 + 5\,\sigma_W^2 + \sigma_S^2 \\
+\text{MS}_{\text{wafer}} &= 5\,\sigma_W^2 + \sigma_S^2 \\
+\text{MS}_{\text{site}} &= \sigma_S^2
+\end{aligned}</div>
+  <p>Solve from the bottom up. With the handbook's mean squares, <span class="m">\hat\sigma_S^2 = 0.1755</span>, then <span class="m">\hat\sigma_W^2 = (0.4253 - 0.1755)/5 = 0.0500</span>, then <span class="m">\hat\sigma_C^2 = (4.3932 - 0.4253)/15 = 0.2645</span>.</p>
+
+  <div class="table-scroll">
+    <table class="ref">
+      <thead><tr><th>Source</th><th class="num">df</th><th class="num">Sum of squares</th><th class="num">Mean square</th><th class="num">Variance component</th></tr></thead>
+      <tbody>
+        <tr><td>Cassette</td><td class="num">29</td><td class="num">127.40293</td><td class="num">4.3932</td><td class="num">0.2645</td></tr>
+        <tr><td>Wafer within cassette</td><td class="num">60</td><td class="num">25.52089</td><td class="num">0.4253</td><td class="num">0.0500</td></tr>
+        <tr><td>Site within wafer</td><td class="num">360</td><td class="num">63.17865</td><td class="num">0.1755</td><td class="num">0.1755</td></tr>
+        <tr><td>Total</td><td class="num">449</td><td class="num">216.10247</td><td class="num"></td><td class="num">0.4900</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="fig-note">The handbook's nested analysis of the real data, from <a href="https://www.itl.nist.gov/div898/handbook/pmc/section6/pmc613.htm" target="_blank" rel="noopener">section 6.6.1.3</a>.</p>
+
+  <div class="check" id="m12-q3" data-answer="54" data-tolerance="1" data-unit="%">
+    <p class="check-q">Using the handbook's variance components, what percentage of the total variance comes from cassette-to-cassette differences? Give a whole number.</p>
+    <div class="check-explain"><p>The share is <span class="m">0.2645 / (0.2645 + 0.0500 + 0.1755) = 0.2645 / 0.4900 = 0.540</span>, or 54%. Wafers contribute 10% and sites 36%. The handbook's worked example reports the same split, so more than half of all the variation in line width comes from differences between cassettes.</p></div>
+  </div>
+
+  <p>The same analysis on this module's simulated data gives components close to the handbook's, which is how the simulation was built:</p>
+  <div id="an-readouts"></div>
+
+  <p>The components explain the failed charts. Every limit in <a href="#naive">section 12.3</a> was built from the site component, or from site and wafer variation together, while the cassette component, the largest of the three, moved the plotted points. The next figure lets you change the three components and see what happens to a standard chart.</p>
+
+  <figure class="fig" id="fig-vc">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">How the variance components decide what a standard chart can do</h3></div>
+    <div class="controls">
+      <label class="control" for="vc-c">
+        <span class="control-label">Cassette variance <output for="vc-c"></output></span>
+        <input type="range" id="vc-c" min="0" max="0.6" step="0.0005" value="0.2645">
+      </label>
+      <label class="control" for="vc-w">
+        <span class="control-label">Wafer variance <output for="vc-w"></output></span>
+        <input type="range" id="vc-w" min="0" max="0.3" step="0.0005" value="0.05">
+      </label>
+      <label class="control" for="vc-s">
+        <span class="control-label">Site variance <output for="vc-s"></output></span>
+        <input type="range" id="vc-s" min="0.02" max="0.5" step="0.0005" value="0.1755">
+      </label>
+      <div class="control">
+        <span class="control-label">Subgroup</span>
+        <div class="seg" id="vc-sub">
+          <button data-value="site">Site</button>
+          <button data-value="wafer" aria-pressed="true">Wafer</button>
+          <button data-value="cassette">Cassette</button>
+        </div>
+      </div>
+      <div class="control-row">
+        <button class="btn small" id="vc-reset" type="button">Handbook values</button>
+        <button class="btn small ghost" id="vc-new" type="button">New sample</button>
+      </div>
+    </div>
+    <div class="fig-chart" id="vc-share"></div>
+    <ul class="legend" id="vc-legend"></ul>
+    <div class="fig-split">
+      <div class="fig-chart" id="vc-chart"></div>
+      <div class="fig-chart" id="vc-dist"></div>
+    </div>
+    <div id="vc-readouts"></div>
+    <div class="state-panel" id="vc-panel" aria-live="polite"><h4></h4><p class="desc"></p><p class="do"></p></div>
+    <figcaption>The bar shows each component's share of the total variance. Left: a simulated study with your components, charted the standard way with the subgroup you pick. Right: where the plotted points fall, drawn sideways on the same scale, with the share beyond the limits in red. Drag the cassette variance to zero, then the wafer variance, and watch the red tails shrink to the nominal 0.27%. The readouts give expected rates, which do not depend on the random sample. This simulation treats the site variation as random, without a fixed pattern.</figcaption>
+  </figure>
+
+  <p>Three lessons come out of the figure. Any between-subgroup component that the limits leave out inflates the false-alarm rate, whichever layer it sits in. While the cassette component is large, bigger subgroups make the chart worse, because they shrink the limits and leave the cassette variation untouched. And a standard chart behaves only when the cassette and wafer components are small next to the site component, which is the situation Shewhart's subgrouping was designed for.</p>
+  <p>The components matter beyond control charts. A customer receives line widths from every cassette, so a capability study (<a href="08-capability.html">module 8</a>) has to use the total variance from all three components. A study that used only the within-wafer spread would overstate what the process can deliver.</p>
+
+  <div class="check" id="m12-q4">
+    <p class="check-q">Suppose an engineering change removed cassette-to-cassette variation entirely, leaving the wafer (0.05) and site (0.1755) components. Set the figure to match. What happens to the standard chart with wafer subgroups?</p>
+    <ul class="check-options">
+      <li data-why="The wafer component still moves every wafer mean, and the within-wafer s still cannot see it.">It fits, and false alarms drop to the nominal 0.27%</li>
+      <li data-why="Removing a source of variation cannot add false alarms. The plotted means vary less, so fewer fall outside.">False alarms rise above the current 34%</li>
+      <li data-why="The s chart only sees the spread inside each wafer, and that did not change.">The s chart starts to signal instead</li>
+      <li data-correct>False alarms fall to about 5% per wafer, still about 20 times the nominal rate</li>
+    </ul>
+    <div class="check-explain"><p>With <span class="m">\sigma_C^2 = 0</span>, the wafer means vary with variance <span class="m">0.0500 + 0.1755/5 = 0.0851</span>, a standard deviation of 0.292. The limits sit at <span class="m">3\sqrt{0.1755}/\sqrt{5} = 0.562</span>, which is only 1.93 of those standard deviations, so about 5.4% of ordinary wafer means fall outside. The wafer-to-wafer component on its own is enough to break the chart.</p></div>
+  </div>
+</section>
+
+<section id="chart-set">
+  <h2>Charts that fit the process</h2>
+  <p>The handbook's answer, which it describes as a common solution, is a set of charts, each aimed at one layer of the process.</p>
+  <div class="def-grid">
+    <div class="def">
+      <h3><span class="dot"></span>Lot means with LL limits</h3>
+      <span class="aka">Watches lot-to-lot variation</span>
+      <p>Plot each cassette's mean, with limits set from how much lot means vary from one lot to the next. The handbook labels these limits UCL: LL and LCL: LL.</p>
+    </div>
+    <div class="def">
+      <h3><span class="dot alt"></span>Standard deviation within lots</h3>
+      <span class="aka">Watches spread inside a lot</span>
+      <p>Plot the s of the 15 readings in each lot against the usual s chart limits. It reacts when one wafer or one site pulls away from the rest of its lot.</p>
+    </div>
+    <div class="def">
+      <h3><span class="dot"></span>Individuals and moving ranges</h3>
+      <span class="aka">Watches single readings</span>
+      <p>Plot every site reading as it comes off the measurement tool. The moving range chart catches a reading that jumps away from its neighbours.</p>
+    </div>
+  </div>
+  <p>The handbook does not print a formula for the LL limits. A common way to build them treats each lot mean as a single measurement and draws an individuals chart of the 30 lot means, with the spread estimated from the moving ranges between consecutive lots:</p>
+  <div class="eq">\begin{aligned}
+\overline{MR} &= \frac{1}{29}\sum_{i=2}^{30} \left|\bar{x}_i - \bar{x}_{i-1}\right| \\
+\text{UCL: LL},\ \text{LCL: LL} &= \bar{\bar{x}} \pm 3\,\frac{\overline{MR}}{1.128} = \bar{\bar{x}} \pm 2.66\,\overline{MR}
+\end{aligned}</div>
+  <p>Consecutive lot means differ by the full lot-to-lot variation, so these limits include it. For the simulated data, <span class="m">\bar{\bar{x}} = 2.52</span> and <span class="m">\overline{MR} = 0.650</span>, which puts the LL limits at 0.79 and 4.25. The within-lot limits from the X̄–s chart, <span class="m">\bar{\bar{x}} \pm A_3\bar{s} = 2.52 \pm 0.789 \times 0.455</span>, sit at 2.17 and 2.88, about a fifth as wide.</p>
+
+  <figure class="fig" id="fig-set">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">The recommended chart set on the simulated data</h3></div>
+    <div class="controls">
+      <div class="control">
+        <span class="control-label">Limits on the lot means chart</span>
+        <div class="seg" id="set-limits">
+          <button data-value="within">Within-lot</button>
+          <button data-value="ll" aria-pressed="true">Lot-to-lot (LL)</button>
+          <button data-value="both">Both</button>
+        </div>
+      </div>
+      <div class="control">
+        <span class="control-label">Plant a problem</span>
+        <div class="seg" id="set-fault">
+          <button data-value="none" aria-pressed="true">None</button>
+          <button data-value="lot">Lot shift</button>
+          <button data-value="wafer">Bad wafer</button>
+          <button data-value="reading">Bad reading</button>
+        </div>
+      </div>
+      <div class="control">
+        <span class="control-label">Site-level chart</span>
+        <div class="seg" id="set-view">
+          <button data-value="ind" aria-pressed="true">Individuals</button>
+          <button data-value="mr">Moving range</button>
+        </div>
+      </div>
+    </div>
+    <div class="fig-chart" id="set-mean"></div>
+    <div class="fig-chart" id="set-sd"></div>
+    <div class="fig-chart" id="set-site-chart"></div>
+    <ul class="legend" id="set-legend"></ul>
+    <div id="set-readouts"></div>
+    <div class="state-panel" id="set-panel" aria-live="polite"><h4></h4><p class="desc"></p><p class="do"></p></div>
+    <figcaption>Top to bottom: lot means, the standard deviation within each lot, and the site readings. Switch the lot chart between within-lot and LL limits. With within-lot limits half the lots signal, and with LL limits none do. Then plant a problem at each level of the process and see which chart catches it. The limits stay at the values computed from the unaltered data, as they would in Phase II, and a red band marks where the problem was planted.</figcaption>
+  </figure>
+
+  <p>Each chart now has a job, and a signal tells the engineer which layer of the process to look at. In the handbook's real data the LL chart is quiet apart from one lot mean that sits right at the edge of its limits.</p>
+  <p>The individuals chart needs care. Its limits come from the moving ranges between neighbouring readings, which are mostly differences between sites on the same wafer, so it inherits the narrow-limits problem whenever a lot runs high or low. Read it beside the lot chart. A reading outside the individuals limits in a lot whose mean is inside the LL limits reflects an ordinary lot offset. The moving range chart is the more useful half of the pair here, because a jump between neighbours is rare unless one reading is wrong or a new lot has started.</p>
+
+  <div class="pitfall">
+    <span class="eyebrow">Common mistake</span>
+    <p>Widening the limits on every chart. The LL limits belong to the lot means chart only. The s chart and the moving range chart keep their usual limits, because they watch variation inside a lot, and widening them would hide the bad wafer and the bad reading in the figure above.</p>
+  </div>
+
+  <div class="check" id="m12-q5">
+    <p class="check-q">A new lot's mean plots above the within-lot UCL of 2.88 but well inside the UCL: LL of 4.25. What should the engineer do?</p>
+    <ul class="check-options">
+      <li data-correct>Record it and carry on, because lot means this far from center are part of normal lot-to-lot variation</li>
+      <li data-why="The within-lot limits leave out lot-to-lot variation, so about half of all ordinary lots cross them. Starting the action plan for each one wastes effort and trust in the charts.">Hold the lot and start the out-of-control action plan</li>
+      <li data-why="Adjusting after an ordinary lot is tampering. It adds variation to the next lot (module 1).">Adjust the exposure dose to pull the next lot back to center</li>
+      <li data-why="Limits are recomputed after a known change to the process. One ordinary lot gives no reason to change them.">Recompute the within-lot limits so they include this lot</li>
+    </ul>
+    <div class="check-explain"><p>The LL limits describe how far lot means travel when only common causes act, and a lot mean between 2.88 and 4.25 is well within that range. The within-lot limits were never the right yardstick for lot means, so crossing them carries no information.</p></div>
+  </div>
+</section>
+
+<section id="ocap">
+  <h2>Write the action plan</h2>
+  <p>A signal is worth something only if it leads to the right action. <a href="01-variation.html#monitoring-and-control">Module 1</a> introduced the out-of-control action plan (OCAP), a flowchart written before any signal arrives that says what to check and in what order. For this process the chart set does half the work, because each chart points at a different layer. The plan below is one a quality engineer might write for this step. The handbook describes the charts and leaves the plan to the reader.</p>
+
+  <figure class="fig" id="fig-ocap">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">An out-of-control action plan for line width</h3></div>
+    <div class="diagram">
+      <svg viewBox="0 0 760 364" role="img" aria-label="Flowchart. A chart signals. Confirm the reading by re-measuring. If the change is not real, correct the record and take no process action. If it is real, branch by chart: a lot mean beyond the LL limits leads to checking what the lot shared; a lot s above its limit leads to finding the wafer or site that differs; a moving range signal leads to inspecting that site. All branches end with holding the lot, deciding on rework and recording the cause.">
+        <defs><marker id="ah12b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="dg-arrowhead" d="M0,0L10,5L0,10z"/></marker></defs>
+        <rect class="dg-node-signal" x="15" y="20" width="160" height="56" rx="10"/>
+        <text class="dg-text" x="95" y="45" text-anchor="middle">A chart signals</text>
+        <text class="dg-sub" x="95" y="63" text-anchor="middle">any chart in the set</text>
+        <rect class="dg-node" x="215" y="20" width="170" height="56" rx="10"/>
+        <text class="dg-text" x="300" y="45" text-anchor="middle">Confirm the reading</text>
+        <text class="dg-sub" x="300" y="63" text-anchor="middle">re-measure, check the gauge</text>
+        <path class="dg-node-accent" d="M480,20 L540,48 L480,76 L420,48 Z"/>
+        <text class="dg-text" x="480" y="53" text-anchor="middle">Real?</text>
+        <rect class="dg-node" x="585" y="20" width="160" height="56" rx="10"/>
+        <text class="dg-text" x="665" y="45" text-anchor="middle">Correct the record</text>
+        <text class="dg-sub" x="665" y="63" text-anchor="middle">no process action</text>
+        <path class="dg-edge" d="M175,48 H209" marker-end="url(#ah12b)"/>
+        <path class="dg-edge" d="M385,48 H414" marker-end="url(#ah12b)"/>
+        <path class="dg-edge" d="M540,48 H579" marker-end="url(#ah12b)"/>
+        <text class="dg-edge-label" x="560" y="40" text-anchor="middle">no</text>
+        <path class="dg-edge" d="M480,76 V102 M130,102 H630"/>
+        <text class="dg-edge-label" x="490" y="94">yes</text>
+        <path class="dg-edge" d="M130,102 V118" marker-end="url(#ah12b)"/>
+        <path class="dg-edge" d="M380,102 V118" marker-end="url(#ah12b)"/>
+        <path class="dg-edge" d="M630,102 V118" marker-end="url(#ah12b)"/>
+
+        <rect class="dg-node" x="15" y="124" width="230" height="54" rx="10"/>
+        <text class="dg-text" x="130" y="148" text-anchor="middle">Lot mean beyond LL</text>
+        <text class="dg-sub" x="130" y="165" text-anchor="middle">the whole lot moved</text>
+        <rect class="dg-node" x="265" y="124" width="230" height="54" rx="10"/>
+        <text class="dg-text" x="380" y="148" text-anchor="middle">Lot s above its UCL</text>
+        <text class="dg-sub" x="380" y="165" text-anchor="middle">spread inside the lot grew</text>
+        <rect class="dg-node" x="515" y="124" width="230" height="54" rx="10"/>
+        <text class="dg-text" x="630" y="148" text-anchor="middle">Moving range signal</text>
+        <text class="dg-sub" x="630" y="165" text-anchor="middle">one reading jumped</text>
+        <path class="dg-edge" d="M130,178 V200" marker-end="url(#ah12b)"/>
+        <path class="dg-edge" d="M380,178 V200" marker-end="url(#ah12b)"/>
+        <path class="dg-edge" d="M630,178 V200" marker-end="url(#ah12b)"/>
+
+        <rect class="dg-node-accent" x="15" y="206" width="230" height="70" rx="10"/>
+        <text class="dg-text" x="130" y="230" text-anchor="middle">Check what the lot shared</text>
+        <text class="dg-sub" x="130" y="248" text-anchor="middle">recipe, scanner, reticle,</text>
+        <text class="dg-sub" x="130" y="263" text-anchor="middle">resist batch, develop and bake</text>
+        <rect class="dg-node-accent" x="265" y="206" width="230" height="70" rx="10"/>
+        <text class="dg-text" x="380" y="230" text-anchor="middle">Find the wafer or site</text>
+        <text class="dg-sub" x="380" y="248" text-anchor="middle">wafer slot, coat and bake,</text>
+        <text class="dg-sub" x="380" y="263" text-anchor="middle">focus across the wafer</text>
+        <rect class="dg-node-accent" x="515" y="206" width="230" height="70" rx="10"/>
+        <text class="dg-text" x="630" y="230" text-anchor="middle">Inspect that site</text>
+        <text class="dg-sub" x="630" y="248" text-anchor="middle">particle or defect,</text>
+        <text class="dg-sub" x="630" y="263" text-anchor="middle">wrong feature measured</text>
+        <path class="dg-edge" d="M130,276 V298" marker-end="url(#ah12b)"/>
+        <path class="dg-edge" d="M380,276 V298" marker-end="url(#ah12b)"/>
+        <path class="dg-edge" d="M630,276 V298" marker-end="url(#ah12b)"/>
+
+        <rect class="dg-node-good" x="15" y="304" width="730" height="50" rx="10"/>
+        <text class="dg-text" x="380" y="326" text-anchor="middle">Hold the lot, decide on rework, and record the cause</text>
+        <text class="dg-sub" x="380" y="343" text-anchor="middle">a lot caught before etch can usually be stripped and printed again</text>
+      </svg>
+    </div>
+    <figcaption>Every branch starts by confirming the measurement, because a gauge problem looks exactly like a process problem on a chart. After that, the chart that signaled decides where to look first.</figcaption>
+  </figure>
+
+  <div class="table-scroll">
+    <table class="ref">
+      <thead><tr><th>Signal</th><th>What it means</th><th>Check first</th><th>Then</th></tr></thead>
+      <tbody>
+        <tr><td>Lot mean beyond UCL: LL or LCL: LL</td><td>The whole lot moved by more than lots normally do</td><td>Re-measure a wafer from the lot and a reference wafer, to rule out a gauge shift</td><td>Compare the lot's history with its neighbours: scanner, reticle, exposure dose and focus, resist and developer batches, bake plates, and the film from the previous step</td></tr>
+        <tr><td>Lot s above its UCL</td><td>Readings inside the lot spread out more than usual</td><td>Break the 15 readings out by wafer and by site to find the wafer or site that moved</td><td>For one wafer, its slot, coat thickness, bake and rework history. For one site, focus and levelling across the wafer and effects near the edge</td></tr>
+        <tr><td>Moving range above its UCL</td><td>One reading jumped away from its neighbours</td><td>Re-measure that site and confirm the tool measured the right feature</td><td>Inspect the site for a particle or defect. If the same site keeps flagging, the site pattern itself may have changed</td></tr>
+        <tr><td>Individual reading beyond its limits</td><td>Either an odd reading or an ordinary lot offset</td><td>Look at the lot chart and the moving range chart</td><td>If the lot mean is inside the LL limits and the moving range is quiet, no action. Otherwise follow the matching row above</td></tr>
+        <tr><td>Lot mean outside the within-lot limits only</td><td>Ordinary lot-to-lot variation</td><td>Nothing</td><td>No adjustment</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Lithography gives early action a payoff. Until the pattern is etched, a lot with bad line widths can usually be reworked. The resist is stripped, and the wafers are coated, exposed and developed again. A problem caught at this step costs a rework. The same problem found after etch can cost the wafers.</p>
+
+  <div class="pitfall">
+    <span class="eyebrow">Common mistake</span>
+    <p>Adjusting the exposure dose every time a lot mean crosses the within-lot limits. Those limits flag about half of all ordinary lots, so the adjustments would chase lot-to-lot noise and add variation, which is the tampering of <a href="01-variation.html#tampering">module 1</a>.</p>
+  </div>
+
+  <div class="check" id="m12-q6">
+    <p class="check-q">The s chart signals for a new lot. Its lot mean sits inside the LL limits and the moving range chart is quiet. After confirming the measurement, where should the investigation start?</p>
+    <ul class="check-options">
+      <li data-why="The lot mean is in control, so a setting the whole lot shared is an unlikely cause.">The lot's exposure recipe and reticle</li>
+      <li data-why="A quiet moving range chart argues against one wild reading.">The single highest reading in the lot</li>
+      <li data-correct>The lot's readings by wafer and by site, to find which wafer or site carries the extra spread</li>
+      <li data-why="The s chart is in the set to catch exactly this. Ignoring it throws away the only signal of trouble inside the lot.">Nowhere, because the lot mean is in control</li>
+    </ul>
+    <div class="check-explain"><p>An s signal with a quiet lot chart and a quiet moving range chart points inside the lot. The usual culprit is one wafer that differs from its lot mates, as in the planted bad wafer, or one site that drifted on every wafer. Breaking the readings out by wafer and by site finds it quickly.</p></div>
+  </div>
+</section>
+
+<section id="summary" class="summary">
+  <h2>Takeaways</h2>
+  <ul>
+    <li>Batch processing stacks variation in layers. In the lithography study they are cassette, wafer within cassette, and site within wafer, while a Shewhart chart assumes a single layer.</li>
+    <li>Plot the data by factor before choosing charts. Box plots by cassette, wafer and site showed the structure before any limit was computed.</li>
+    <li>X̄ chart limits come from the variation inside subgroups. When normal variation sits between subgroups, the limits are too narrow and the chart flags ordinary lots. Here about half the lot means fall outside within-lot limits.</li>
+    <li>A nested random-effects ANOVA splits the total variance into components: 54% cassette, 10% wafer and 36% site for the handbook's data.</li>
+    <li>The handbook's chart set fits the process: lot means against lot-to-lot (LL) limits, an s chart for spread within lots, and individuals and moving range charts for the site readings.</li>
+    <li>Each chart points at a different layer of the process, so the out-of-control action plan starts from the chart that signaled, after the measurement is confirmed.</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>

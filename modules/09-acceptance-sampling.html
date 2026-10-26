@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en" class="math-pending">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Lot acceptance sampling · In Control</title>
+<meta name="description" content="Single, double and sequential sampling plans, OC curves, AQL and LTPD, producer's and consumer's risk, AOQ, ATI and the MIL-STD-105D scheme.">
+<script>try{var t=localStorage.getItem('in-control:theme');if(t&&t!=='system')document.documentElement.dataset.theme=t}catch(e){}setTimeout(function(){document.documentElement.classList.remove('math-pending')},3000)</script>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="Lot acceptance sampling · In Control">
+<meta property="og:description" content="Single, double and sequential sampling plans, OC curves, AQL and LTPD, producer's and consumer's risk, AOQ, ATI and the MIL-STD-105D scheme.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap">
+<link rel="stylesheet" href="../assets/css/course.css">
+<style>
+  /* items in the lot simulator */
+  .ch .k-item { fill: var(--surface-2); }
+  .ch .k-item-bad { fill: var(--signal); fill-opacity: 0.3; }
+  .ch .k-item-sample { fill: var(--data); }
+  .ch .k-item-sample-bad { fill: var(--signal); }
+  .ch .k-item-ring { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+  /* regions of the sequential chart */
+  .ch .k-region-accept { fill: var(--good-soft); }
+  .ch .k-region-reject { fill: var(--signal-soft); }
+  .ch .k-label-good { fill: var(--good); font-size: 11.5px; font-weight: 600; }
+  .ch .k-dot-good { fill: var(--good); stroke: var(--surface); stroke-width: 2; }
+  /* risk bars on the OC curves */
+  .ch .k-risk { stroke-width: 5; stroke-linecap: butt; }
+  .ch .k-handle.k-ink .k-handle-label { fill: var(--ink-2); }
+  .design-note { font-size: 0.85rem; color: var(--ink-2); }
+  .def h3 .dot.alt2 { background: var(--alt-2); }
+</style>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script type="module" src="../assets/js/course.js"></script>
+<script type="module" src="../assets/js/modules/09-acceptance-sampling.js"></script>
+</head>
+<body data-module="9">
+<div class="shell">
+<nav class="rail" id="rail"></nav>
+<main class="page" id="main">
+
+<header class="module-head">
+  <h1>Lot acceptance sampling</h1>
+  <p class="lede">A shipment of 10,000 parts arrives at the dock. Inspecting every one may be too slow, too expensive or, when the test destroys the part, impossible. Acceptance sampling inspects a random sample and uses it to accept or reject the whole lot, with risks you can choose in advance and calculate exactly.</p>
+</header>
+
+<section id="purpose">
+  <h2>What acceptance sampling is for</h2>
+  <p>A <strong>lot</strong> is a batch of items made under the same conditions, such as a pallet of castings, a reel of resistors or a day's production of tablets. A sampling plan draws a random sample from the lot, inspects it, and applies a rule that decides the fate of the entire lot. The handbook places this between two extremes. With no inspection, defective product goes straight to the customer. With 100% inspection, every item is checked, which costs the most and is impossible when testing destroys the item. Sampling makes sense when the test is destructive, when full inspection is too costly, or when it takes too long.</p>
+  <p>Harold Dodge and Harry Romig built the theory and tables at Bell Telephone Laboratories, and the US military made acceptance sampling standard practice for munitions during the Second World War. Most plans work <strong>by attributes</strong>. Each sampled item either conforms or does not, and the rule counts the defectives. Plans <strong>by variables</strong> measure a characteristic instead and work with the sample mean and standard deviation. This module covers attribute plans, as the handbook does.</p>
+
+  <div class="pitfall">
+    <span class="eyebrow">Common mistake</span>
+    <p>Acceptance sampling sorts lots. It does nothing to the process that made them. The lot rejected today came from the same process that will make tomorrow's lots. Dodge described single sampling plans as short-run, one-shot tests; long-run quality comes from process control, the subject of modules 2 to 7. Use sampling to protect the customer while process control does the improving, and inspect less as evidence of good quality builds up.</p>
+  </div>
+
+  <div class="check" id="m9-q1">
+    <p class="check-q">Your sampling plan rejects about 30% of the lots from one supplier. Rejected lots go back for sorting. What effect does the plan have on the supplier's process?</p>
+    <ul class="check-options">
+      <li data-why="A plan only judges lots after they are made. Unless someone acts on the rejections, the process keeps running exactly as before.">It gradually improves the process, because bad lots are removed</li>
+      <li data-why="A plan accepts some lots that contain defectives. Its OC curve says exactly how often.">It guarantees that accepted lots contain no defectives</li>
+      <li data-correct>None. It keeps more bad lots away from you, but the process stays the same until someone changes it</li>
+    </ul>
+    <div class="check-explain"><p>Sampling separates lots into accepted and rejected. The rejection rate is a signal that the supplier's process needs attention, through process control, root-cause work or a better process. The plan itself changes nothing upstream.</p></div>
+  </div>
+</section>
+
+<section id="one-lot">
+  <h2>One lot, one sample</h2>
+  <p>The simplest plan is a <strong>single sampling plan</strong>, written <span class="m">(n, c)</span>. Draw <span class="m">n</span> items at random and count the defectives <span class="m">d</span>. Accept the lot if <span class="m">d \le c</span> and reject it if <span class="m">d &gt; c</span>. The number <span class="m">c</span> is the acceptance number. The handbook's running example is <span class="m">n = 52</span>, <span class="m">c = 3</span>.</p>
+  <p>The outcome for any one lot is partly luck. A sample of 52 from a lot that is 5% defective contains 2.6 defectives on average, but any given sample may hold 0, 3 or 6. When the lot is large compared with the sample, <span class="m">d</span> follows a binomial distribution, and the probability that the plan accepts a lot with fraction defective <span class="m">p</span> is</p>
+  <div class="eq">P_a = P(d \le c) = \sum_{d=0}^{c} \binom{n}{d}\, p^{d}\, (1-p)^{\,n-d}</div>
+
+  <figure class="fig" id="fig-lot">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Inspecting lots with the plan n = 52, c = 3</h3></div>
+    <div class="controls">
+      <label class="control" for="lot-p">
+        <span class="control-label">Process fraction defective <output for="lot-p"></output></span>
+        <input type="range" id="lot-p" min="0" max="0.15" step="0.005" value="0.05">
+      </label>
+      <div class="control-row">
+        <label class="check-inline"><input type="checkbox" id="lot-reveal" checked> Show defectives outside the sample</label>
+      </div>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn primary" id="lot-next" type="button">Inspect next lot</button>
+        <button class="btn" id="lot-run" type="button">Run 100 lots</button>
+        <button class="btn ghost" id="lot-reset" type="button">Reset</button>
+      </div>
+    </div>
+    <div class="fig-split even">
+      <div class="fig-chart" id="lot-grid"></div>
+      <div class="fig-chart" id="lot-tally"></div>
+    </div>
+    <ul class="legend" id="lot-legend"></ul>
+    <div id="lot-readouts"></div>
+    <figcaption>Left: one lot of 500 items from a process that makes defectives at the rate you choose, so each lot's own fraction wanders a little. The plan samples 52 of them (blue, or red if defective) and accepts the lot if 3 or fewer are defective. Right: the share of lots accepted so far. Inspect a few lots one at a time, then run 100 and watch the share settle on <span class="m">P_a</span>. At 5% defective, about three lots in four still pass.</figcaption>
+  </figure>
+</section>
+
+<section id="oc-curve">
+  <h2>The operating characteristic curve</h2>
+  <p>Plot <span class="m">P_a</span> against the lot fraction defective <span class="m">p</span> and you get the plan's <strong>operating characteristic (OC) curve</strong>, the handbook's main tool for judging a plan. A perfect plan would accept every good lot and reject every bad one. A real plan makes two kinds of mistake, and each side of the transaction worries about one of them.</p>
+  <div class="def-grid">
+    <div class="def">
+      <h3><span class="dot alt"></span>AQL and producer's risk</h3>
+      <span class="aka">The producer's point, (AQL, 1 − α)</span>
+      <p>The <strong>acceptable quality level</strong> is the fraction defective that counts as normal, good output. The producer wants lots at the AQL accepted nearly every time. The probability of rejecting one anyway is the producer's risk, <span class="m">\alpha</span>, a type I error.</p>
+    </div>
+    <div class="def">
+      <h3><span class="dot alt2"></span>LTPD and consumer's risk</h3>
+      <span class="aka">The consumer's point, (LTPD, β)</span>
+      <p>The <strong>lot tolerance percent defective</strong> is a fraction defective the consumer will not tolerate. The consumer wants such lots rejected nearly every time. The probability of accepting one anyway is the consumer's risk, <span class="m">\beta</span>, a type II error.</p>
+    </div>
+  </div>
+  <p>The handbook gives 0.01 to 0.2 as typical values for both risks. Together the two points pin down what a plan must do, and the OC curve shows whether it does.</p>
+
+  <figure class="fig" id="fig-oc">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">OC curve explorer</h3></div>
+    <div class="controls">
+      <label class="control" for="oc-n">
+        <span class="control-label">Sample size n <output for="oc-n"></output></span>
+        <input type="range" id="oc-n" min="5" max="200" step="1" value="52">
+      </label>
+      <label class="control" for="oc-c">
+        <span class="control-label">Acceptance number c <output for="oc-c"></output></span>
+        <input type="range" id="oc-c" min="0" max="10" step="1" value="3">
+      </label>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn" id="oc-handbook" type="button">Handbook plan (52, 3)</button>
+      </div>
+    </div>
+    <div class="fig-chart" id="oc-chart"></div>
+    <ul class="legend" id="oc-legend"></ul>
+    <div id="oc-readouts"></div>
+    <details class="data"><summary>Data table: the handbook plan n = 52, c = 3</summary><div class="table-wrap" id="oc-table"></div></details>
+    <figcaption>Drag the AQL and LTPD markers, or change <span class="m">n</span> and <span class="m">c</span>. The violet bar is the producer's risk, the gap between the curve and 1 at the AQL. The green bar is the consumer's risk, the height of the curve at the LTPD. The dashed lines show the ideal plan, which accepts everything at the AQL or better and rejects everything at the LTPD or worse. In the gray zone between, either answer is tolerable. Raise <span class="m">n</span> alone and the curve slides left; raise <span class="m">n</span> and <span class="m">c</span> together and it steepens toward the ideal.</figcaption>
+  </figure>
+
+  <div class="check" id="m9-q2" data-answer="0.738" data-tolerance="0.002">
+    <p class="check-q">For the handbook plan <span class="m">n = 52</span>, <span class="m">c = 3</span>, what is the probability of accepting a lot that is 5% defective? Give three decimals. Use the figure, or add up the four binomial terms.</p>
+    <div class="check-explain"><p><span class="m">P_a = \sum_{d=0}^{3}\binom{52}{d}(0.05)^d(0.95)^{52-d} = 0.0694 + 0.1901 + 0.2551 + 0.2237 = 0.738</span>. The handbook's table prints 0.739, and 0.845 at 4% where the exact sum rounds to 0.846; every other entry agrees to three decimals. A lot with one item in twenty defective passes this plan about three times in four.</p></div>
+  </div>
+
+  <div class="check" id="m9-q3">
+    <p class="check-q">You double the sample size of the handbook plan to <span class="m">n = 104</span> but keep <span class="m">c = 3</span>. What happens to the two risks at an AQL of 2% and an LTPD of 10%?</p>
+    <ul class="check-options">
+      <li data-why="Both risks fall only when n and c rise together. With c fixed, the plan simply becomes stricter.">Both risks fall</li>
+      <li data-correct>The consumer's risk falls, and the producer's risk rises</li>
+      <li data-why="That would need a more lenient plan, for example a larger c.">The producer's risk falls, and the consumer's risk rises</li>
+      <li data-why="The OC curve depends on n, so changing n moves it.">Neither changes, because c is the same</li>
+    </ul>
+    <div class="check-explain"><p>Allowing the same three defectives in twice as many items is a stricter standard, so the whole curve moves left. At 10% defective, <span class="m">P_a</span> drops from 0.223 to 0.006. At 2% defective, it drops from 0.980 to 0.844, so the producer's risk jumps from 0.02 to about 0.16.</p></div>
+  </div>
+</section>
+
+<section id="design">
+  <h2>Designing a plan from two points</h2>
+  <p>The usual design brief is the two points from the previous section. The plan's OC curve must pass at or above the producer's point and at or below the consumer's point.</p>
+  <div class="eq">\sum_{d=0}^{c}\binom{n}{d}p_1^{d}(1-p_1)^{n-d} \ge 1-\alpha \qquad \sum_{d=0}^{c}\binom{n}{d}p_2^{d}(1-p_2)^{n-d} \le \beta</div>
+  <p>Here <span class="m">p_1</span> is the AQL and <span class="m">p_2</span> the LTPD. The handbook notes that these equations have no direct solution, so plans are found by search. A simple search tries <span class="m">c = 0, 1, 2, \dots</span> in turn. For each <span class="m">c</span> it finds the smallest <span class="m">n</span> that protects the consumer, then checks whether that plan also protects the producer. The first <span class="m">c</span> that passes both tests gives the smallest plan.</p>
+
+  <figure class="fig" id="fig-design">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Find the smallest plan that meets both points</h3></div>
+    <div class="controls">
+      <label class="control" for="ds-aql">
+        <span class="control-label">AQL <output for="ds-aql"></output></span>
+        <input type="range" id="ds-aql" min="0.005" max="0.05" step="0.001" value="0.01">
+      </label>
+      <div class="control">
+        <span class="control-label">Producer's risk α</span>
+        <div class="seg" id="ds-alpha"><button data-value="0.01">0.01</button><button data-value="0.05" aria-pressed="true">0.05</button><button data-value="0.1">0.10</button></div>
+      </div>
+      <label class="control" for="ds-ltpd">
+        <span class="control-label">LTPD <output for="ds-ltpd"></output></span>
+        <input type="range" id="ds-ltpd" min="0.02" max="0.2" step="0.005" value="0.1">
+      </label>
+      <div class="control">
+        <span class="control-label">Consumer's risk β</span>
+        <div class="seg" id="ds-beta"><button data-value="0.05">0.05</button><button data-value="0.1" aria-pressed="true">0.10</button><button data-value="0.2">0.20</button></div>
+      </div>
+    </div>
+    <div class="fig-chart" id="ds-chart"></div>
+    <ul class="legend" id="ds-legend"></ul>
+    <div id="ds-readouts"></div>
+    <p class="design-note" id="ds-note" aria-live="polite"></p>
+    <div class="table-wrap" id="ds-table"></div>
+    <figcaption>The defaults ask for 95% acceptance at 1% defective and at most 10% acceptance at 10% defective. The search lands on <span class="m">n = 52</span>, <span class="m">c = 2</span>, the single plan the handbook pairs with its sequential example in section 9.6. For each value of <span class="m">c</span> the search tried, the table shows the smallest sample that protects the consumer and the largest sample the producer can accept. A plan exists once the first is no larger than the second. The faint curve is the best plan with one fewer acceptance number, which meets the consumer's point and misses the producer's. Move the AQL and LTPD closer together and the sample size climbs quickly.</figcaption>
+  </figure>
+
+  <p>The other route to a plan is a published table. Section 9.7 outlines MIL-STD-105D, which indexes its plans by the AQL and the lot size.</p>
+</section>
+
+<section id="rectifying">
+  <h2>Rectifying inspection: AOQ, AOQL and ATI</h2>
+  <p>A rejected lot is often not sent back. Instead it is inspected 100%, and every defective found is replaced with a good item. This is <strong>rectifying inspection</strong>. Accepted lots ship with whatever defectives they contained outside the sample, and rejected lots ship clean. Over many lots of the same incoming quality <span class="m">p</span>, the fraction defective in what ships is the <strong>average outgoing quality</strong>.</p>
+  <div class="eq">\text{AOQ} = \frac{P_a\, p\, (N - n)}{N}</div>
+  <p>Here <span class="m">N</span> is the lot size. When <span class="m">N</span> is much larger than <span class="m">n</span>, AOQ is close to <span class="m">P_a\,p</span>. At <span class="m">p = 0</span> there is nothing to find, so AOQ is zero. When incoming quality is very bad, nearly every lot is rejected and screened, so AOQ falls back toward zero. In between it peaks. That peak is the <strong>average outgoing quality limit</strong> (AOQL), the worst long-run outgoing quality the plan can deliver, whatever the supplier sends.</p>
+  <p>The price of that guarantee is inspection. The <strong>average total inspection</strong> per lot counts the sample in every lot plus the rest of every rejected lot.</p>
+  <div class="eq">\text{ATI} = n + (1 - P_a)(N - n)</div>
+
+  <figure class="fig" id="fig-aoq">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">What ships, and what it costs to inspect</h3></div>
+    <div class="controls">
+      <label class="control" for="aoq-n">
+        <span class="control-label">Sample size n <output for="aoq-n"></output></span>
+        <input type="range" id="aoq-n" min="5" max="200" step="1" value="52">
+      </label>
+      <label class="control" for="aoq-c">
+        <span class="control-label">Acceptance number c <output for="aoq-c"></output></span>
+        <input type="range" id="aoq-c" min="0" max="10" step="1" value="3">
+      </label>
+      <label class="control" for="aoq-lot">
+        <span class="control-label">Lot size N <output for="aoq-lot"></output></span>
+        <input type="range" id="aoq-lot" min="500" max="20000" step="500" value="10000">
+      </label>
+    </div>
+    <div class="fig-split even">
+      <div class="fig-chart" id="aoq-chart"></div>
+      <div class="fig-chart" id="ati-chart"></div>
+    </div>
+    <ul class="legend" id="aoq-legend"></ul>
+    <div id="aoq-readouts"></div>
+    <details class="data"><summary>Data table: n = 52, c = 3, N = 10,000</summary><div class="table-wrap" id="aoq-table"></div></details>
+    <figcaption>The figure opens on the handbook plan with lots of 10,000. Left: average outgoing quality, with the AOQL marked. Right: average total inspection, which climbs from <span class="m">n</span> toward <span class="m">N</span> as incoming quality gets worse. Lower <span class="m">c</span> or raise <span class="m">n</span> and the AOQL falls, paid for with more inspection at every incoming quality. Shrink the lot and the AOQ drops a little, because the sample is now a larger share of the lot.</figcaption>
+  </figure>
+
+  <div class="from-nist">
+    <span class="eyebrow">Handbook 6.2.3.2</span>
+    <p>For the plan <span class="m">n = 52</span>, <span class="m">c = 3</span> with <span class="m">N = 10{,}000</span>, the <a href="https://www.itl.nist.gov/div898/handbook/pmc/section2/pmc232.htm" target="_blank" rel="noopener">handbook</a> finds an AOQL of about 3.72%, reached when incoming lots are close to 6% defective. Its text prints the value as .372, a slipped decimal point; its own table shows 0.0372.</p>
+  </div>
+
+  <div class="check" id="m9-q4" data-answer="753" data-tolerance="3" data-unit="items">
+    <p class="check-q">Lots of <span class="m">N = 10{,}000</span> arrive with 3% defective. The plan <span class="m">n = 52</span>, <span class="m">c = 3</span> accepts such a lot with probability <span class="m">P_a = 0.9295</span>, and rejected lots are screened completely. What is the average total inspection per lot, to the nearest item?</p>
+    <div class="check-explain"><p><span class="m">\text{ATI} = 52 + (1 - 0.9295)(10{,}000 - 52) = 52 + 0.0705 \times 9{,}948 \approx 753</span>. Every lot costs 52 inspections, and the 7% of lots that fail cost another 9,948 each. The handbook gets the same 753; rounding <span class="m">P_a</span> to 0.930 first would give 748.</p></div>
+  </div>
+</section>
+
+<section id="multi-stage">
+  <h2>Double, multiple and sequential plans</h2>
+  <p>A single plan always inspects <span class="m">n</span> items, even when the first few make the answer obvious. Plans that sample in stages can stop early, which lowers the <strong>average sample number</strong> (ASN), the expected number of items inspected per lot.</p>
+  <p><strong>Double sampling</strong> takes up to two samples.</p>
+  <ol class="steps">
+    <li><span><strong>First sample.</strong> Inspect <span class="m">n_1</span> items and count <span class="m">d_1</span>. Accept if <span class="m">d_1 \le c_1</span>. Reject if <span class="m">d_1 &gt; c_2</span>.</span></li>
+    <li><span><strong>Second sample.</strong> Otherwise inspect <span class="m">n_2</span> more items and count <span class="m">d_2</span>. Accept if <span class="m">d_1 + d_2 \le c_2</span>, and reject if not.</span></li>
+  </ol>
+  <p>The handbook designs double plans from tables indexed by the ratio <span class="m">R = p_2/p_1</span>, built for <span class="m">\alpha = 0.05</span> and <span class="m">\beta = 0.10</span>. For <span class="m">p_1 = 0.01</span> and <span class="m">p_2 = 0.05</span>, <span class="m">R = 5</span>, and the nearest row, <span class="m">R = 4.65</span>, gives <span class="m">c_1 = 2</span> and <span class="m">c_2 = 4</span>. Holding the consumer's point gives <span class="m">n_1 = n_2 = 108</span>. That plan accepts 96% of lots at 1% defective and 9% at 5% defective. The expected sample size of a double plan depends on <span class="m">p</span>.</p>
+  <div class="eq">\text{ASN} = n_1 P_1 + (n_1 + n_2)(1 - P_1) = n_1 + n_2(1 - P_1)</div>
+  <p>where <span class="m">P_1</span> is the probability of reaching a decision on the first sample.</p>
+
+  <div class="check" id="m9-q5" data-answer="105.5" data-tolerance="0.6" data-display="105.5 (the handbook rounds to 106)">
+    <p class="check-q">The handbook's ASN example uses <span class="m">n_1 = 50</span>, <span class="m">c_1 = 2</span>, <span class="m">n_2 = 100</span>, <span class="m">c_2 = 6</span> with lots 6% defective. The first sample accepts with probability 0.416 and rejects with probability 0.029. What is the average sample number?</p>
+    <div class="check-explain"><p><span class="m">P_1 = 0.416 + 0.029 = 0.445</span>, so <span class="m">\text{ASN} = 50 + 100 \times (1 - 0.445) = 105.5</span>. The handbook writes it as <span class="m">50(0.445) + 150(0.555)</span> and reports 106.</p></div>
+  </div>
+
+  <p><strong>Multiple sampling</strong> extends the idea to as many as <span class="m">k</span> stages; MIL-STD-105D uses seven. After stage <span class="m">i</span>, the cumulative count of defectives is compared with an acceptance number <span class="m">a_i</span> and a rejection number <span class="m">r_i</span>, and sampling continues while the count sits between them. Some plans do not allow acceptance at the earliest stages, though rejection is always possible.</p>
+  <p><strong>Sequential sampling</strong> takes the idea to its limit. It inspects one item at a time and decides after each. Plot the cumulative number of defectives against the number inspected. Two parallel lines split the chart into accept, continue and reject regions.</p>
+  <div class="eq">\begin{aligned} x_a &amp;= -h_1 + s\,n \qquad x_r = h_2 + s\,n \\[6pt] h_1 &amp;= \frac{1}{k}\log\frac{1-\alpha}{\beta} \qquad h_2 = \frac{1}{k}\log\frac{1-\beta}{\alpha} \qquad s = \frac{1}{k}\log\frac{1-p_1}{1-p_2} \\[6pt] k &amp;= \log\frac{p_2(1-p_1)}{p_1(1-p_2)} \end{aligned}</div>
+  <p>Accept when the count falls to or below <span class="m">x_a</span>, and reject when it reaches or passes <span class="m">x_r</span>. The handbook's example uses <span class="m">p_1 = 0.01</span>, <span class="m">p_2 = 0.10</span>, <span class="m">\alpha = 0.05</span> and <span class="m">\beta = 0.10</span>, which gives <span class="m">x_a = -0.939 + 0.040n</span> and <span class="m">x_r = 1.205 + 0.040n</span>. Two defectives among the first 19 items reject the lot, and no lot can be accepted until 24 items in a row have passed. Since the walk could in principle go on until the whole lot is inspected, the handbook suggests stopping at three times the single plan's sample size, here <span class="m">3 \times 52 = 156</span> items.</p>
+
+  <figure class="fig" id="fig-seq">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Three plans with the same protection</h3></div>
+    <div class="controls">
+      <label class="control" for="seq-p">
+        <span class="control-label">Lot fraction defective <output for="seq-p"></output></span>
+        <input type="range" id="seq-p" min="0" max="0.15" step="0.005" value="0.03">
+      </label>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn primary" id="seq-go" type="button">Inspect a lot item by item</button>
+      </div>
+    </div>
+    <div class="fig-split">
+      <div class="fig-chart" id="seq-walk"></div>
+      <div class="fig-chart" id="seq-asn"></div>
+    </div>
+    <ul class="legend" id="seq-legend"></ul>
+    <div id="seq-readouts"></div>
+    <figcaption>All three plans accept at least 95% of lots at 1% defective and at most 10% at 10% defective. They are the single plan <span class="m">n = 52</span>, <span class="m">c = 2</span>; a double plan with <span class="m">n_1 = n_2 = 29</span>, <span class="m">c_1 = 0</span>, <span class="m">c_2 = 2</span>, found by searching for the smallest equal-sized double plan that meets both points; and the handbook's sequential plan. Left: one lot under the sequential plan, with the path of cumulative defectives running until it leaves the white band. Right: the average number of items each plan inspects per lot. The sequential plan usually stops first. The price is a workload that changes from lot to lot and rules that are harder to run on the shop floor.</figcaption>
+  </figure>
+</section>
+
+<section id="standards">
+  <h2>Standard schemes and skip-lot sampling</h2>
+  <p>Few organizations design plans from scratch. The most widely used tables began as US Army and Navy procedures in the Second World War and became MIL-STD-105A in 1950. Revision 105D was issued in 1963. The American National Standards Institute adopted it as ANSI Z1.4 in 1971, the International Organization for Standardization adopted it as ISO 2859 in 1974, and the 1989 revision, 105E, is the latest. All three keep the same basic tables.</p>
+  <p>The standard is a <strong>scheme</strong>. For each situation it gives a normal, a tightened and a reduced plan, plus rules for switching between them, all built around the AQL. Using it takes seven steps.</p>
+  <ol class="steps">
+    <li><span><strong>Agree on the AQL</strong> with the supplier.</span></li>
+    <li><span><strong>Choose the inspection level.</strong> Three general and four special levels set how fast the sample grows with the lot size.</span></li>
+    <li><span><strong>Note the lot size.</strong></span></li>
+    <li><span><strong>Find the sample size code letter</strong> from the lot size and the inspection level.</span></li>
+    <li><span><strong>Choose single, double or multiple sampling.</strong></span></li>
+    <li><span><strong>Read the plan</strong> from the table for that code letter, plan type and AQL.</span></li>
+    <li><span><strong>Start with normal inspection</strong> and follow the switching and stopping rules.</span></li>
+  </ol>
+  <p>The switching rules tie the plan to the supplier's record. Evidence that quality is worse than the AQL, such as two rejected lots among five consecutive ones, moves inspection to the tightened plan. Five consecutive accepted lots on tightened inspection move it back to normal. A sustained run of good lots can earn reduced inspection, and a supplier that stays on tightened inspection can have acceptance stopped altogether.</p>
+  <p><strong>Skip-lot sampling</strong> rewards a proven supplier more directly by inspecting only some lots. The handbook recommends it only for product with a demonstrated record of very good quality.</p>
+  <ol class="steps">
+    <li><span><strong>Design a reference plan</strong>, a single sampling plan with the risks you want.</span></li>
+    <li><span><strong>Inspect every lot</strong> with the reference plan until <span class="m">i</span> consecutive lots are accepted. The integer <span class="m">i</span> is the clearance number.</span></li>
+    <li><span><strong>Inspect a random fraction</strong> <span class="m">f</span> of the lots that follow, with <span class="m">0 &lt; f &lt; 1</span>.</span></li>
+    <li><span><strong>Return to every lot</strong> as soon as an inspected lot is rejected.</span></li>
+  </ol>
+  <p>If <span class="m">P</span> is the reference plan's probability of acceptance, the skip-lot scheme accepts with probability</p>
+  <div class="eq">P_a(f, i) = \frac{fP + (1-f)P^{\,i}}{f + (1-f)P^{\,i}}</div>
+  <p>and inspects <span class="m">F = f/\left[(1-f)P^{\,i} + f\right]</span> times as many items as the reference plan. With the handbook plan <span class="m">(52, 3)</span> as reference, <span class="m">f = 0.25</span> and <span class="m">i = 5</span>, a supplier running at 2% defective is inspected about 14 items per lot instead of 52, and 99.5% of lots pass. The cost shows up at worse quality. At 5% defective the scheme accepts 84% of lots, against 74% for the reference plan alone.</p>
+
+  <div class="check" id="m9-q6">
+    <p class="check-q">A supplier is on skip-lot sampling with <span class="m">f = 0.25</span> and clearance number <span class="m">i = 5</span>. One of the randomly chosen lots is inspected and rejected. What happens next?</p>
+    <ul class="check-options">
+      <li data-why="Skip-lot sampling does not stop after one rejection. It returns to the reference plan.">Acceptance of the supplier's lots stops until the process is fixed</li>
+      <li data-correct>Every lot is inspected again until 5 consecutive lots are accepted</li>
+      <li data-why="A rejection ends the skipping. Staying at f = 0.25 would ignore the evidence of a problem.">Skipping continues at f = 0.25, and only the rejected lot is screened</li>
+      <li data-why="Skip-lot procedures return to the reference plan, not to a larger fraction of lots.">The fraction inspected doubles to f = 0.5</li>
+    </ul>
+    <div class="check-explain"><p>A rejected lot sends the scheme back to normal inspection of every lot with the reference plan. Skipping resumes only after the supplier clears <span class="m">i = 5</span> consecutive accepted lots again.</p></div>
+  </div>
+</section>
+
+<section id="summary" class="summary">
+  <h2>Takeaways</h2>
+  <ul>
+    <li>Acceptance sampling decides the fate of lots from a random sample. It protects the customer and does nothing to improve the process.</li>
+    <li>A single plan <span class="m">(n, c)</span> accepts a lot when the sample holds <span class="m">c</span> or fewer defectives. Its OC curve gives <span class="m">P_a</span> for every lot quality.</li>
+    <li>The AQL and producer's risk α, and the LTPD and consumer's risk β, are two points a plan's OC curve must respect. Finding the plan takes a search, or a table.</li>
+    <li>With rectifying inspection, the AOQL caps the long-run outgoing fraction defective, and the ATI is the inspection effort that pays for it.</li>
+    <li>Double, multiple and sequential plans reach the same protection with fewer items on average. MIL-STD-105D (now ANSI Z1.4 and ISO 2859) and skip-lot sampling adjust inspection to the supplier's record.</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>

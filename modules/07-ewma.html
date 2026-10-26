@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en" class="math-pending">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>EWMA charts · In Control</title>
+<meta name="description" content="Exponentially weighted moving average charts: how the weights work, how to set the limits, how to choose lambda, and the handbook's worked example.">
+<script>try{var t=localStorage.getItem('in-control:theme');if(t&&t!=='system')document.documentElement.dataset.theme=t}catch(e){}setTimeout(function(){document.documentElement.classList.remove('math-pending')},3000)</script>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="EWMA charts · In Control">
+<meta property="og:description" content="Exponentially weighted moving average charts: how the weights work, how to set the limits, how to choose lambda, and the handbook's worked example.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap">
+<link rel="stylesheet" href="../assets/css/course.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script type="module" src="../assets/js/course.js"></script>
+<script type="module" src="../assets/js/modules/07-ewma.js"></script>
+</head>
+<body data-module="7">
+<div class="shell">
+<nav class="rail" id="rail"></nav>
+<main class="page" id="main">
+
+<header class="module-head">
+  <h1>EWMA charts</h1>
+  <p class="lede">An EWMA chart plots a running average that keeps every past observation but trusts the newest most. One number, λ, sets how fast old data fade, and with it how sensitive the chart is to small shifts.</p>
+</header>
+
+<section id="weighted-memory">
+  <h2>A weighted memory</h2>
+  <p>A Shewhart chart bases each decision on the latest point alone. The exponentially weighted moving average (EWMA) chart, introduced by S. W. Roberts in 1959, bases each decision on all the data so far and gives older observations less and less weight. The statistic is updated with one line of arithmetic:</p>
+  <div class="eq">\text{EWMA}_t = \lambda\, Y_t + (1-\lambda)\,\text{EWMA}_{t-1}, \qquad t = 1, 2, \ldots, n</div>
+  <dl class="where">
+    <dt><span class="m">Y_t</span></dt><dd>the observation at time <span class="m">t</span></dd>
+    <dt><span class="m">\text{EWMA}_0</span></dt><dd>the starting value: the target, or the mean of in-control historical data</dd>
+    <dt><span class="m">\lambda</span></dt><dd>the weighting constant, <span class="m">0 &lt; \lambda \le 1</span></dd>
+  </dl>
+  <p>Substitute the recursion into itself and each observation's weight appears. The newest gets <span class="m">\lambda</span>, the one before <span class="m">\lambda(1-\lambda)</span>, the one before that <span class="m">\lambda(1-\lambda)^2</span>, and so on:</p>
+  <div class="eq">\text{EWMA}_t = \lambda \sum_{i=0}^{t-1} (1-\lambda)^i\, Y_{t-i} + (1-\lambda)^t\, \text{EWMA}_0</div>
+  <p>The weights shrink geometrically, and together with the weight left on the starting value they add to 1. A large <span class="m">\lambda</span> forgets quickly. At <span class="m">\lambda = 1</span> the EWMA equals the latest observation, and the chart becomes a Shewhart chart. A small <span class="m">\lambda</span> remembers a long way back, which averages away noise and lets a small, lasting shift build up.</p>
+
+  <figure class="fig" id="fig-weights">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">How much each past observation counts</h3></div>
+    <div class="controls">
+      <label class="control" for="wt-lambda">
+        <span class="control-label">Weighting constant λ <output for="wt-lambda">0.30</output></span>
+        <input type="range" id="wt-lambda" min="0.05" max="1" step="0.05" value="0.3">
+      </label>
+      <div class="control">
+        <span class="control-label">Compare with</span>
+        <div class="seg" id="wt-compare">
+          <button data-value="shewhart" aria-pressed="true">Shewhart chart</button>
+          <button data-value="ma">5-point moving average</button>
+        </div>
+      </div>
+    </div>
+    <div class="fig-chart" id="wt-chart"></div>
+    <ul class="legend" id="wt-legend"></ul>
+    <div id="wt-readouts"></div>
+    <figcaption>Blue bars are the EWMA's weights on the last 20 observations, newest on the right. The violet outline is the scheme you compare against. A Shewhart chart puts all its weight on the newest point; a 5-point moving average spreads it evenly over five points and then drops the rest. Slide λ down to 0.1 and the weight spreads over many points. Slide it to 1 and the bars match the Shewhart outline exactly.</figcaption>
+  </figure>
+
+  <div class="check" id="m7-q1">
+    <p class="check-q">What does an EWMA chart with <span class="m">\lambda = 1</span> plot?</p>
+    <ul class="check-options">
+      <li data-why="Equal weights on all the data would give a cumulative average. At λ = 1 every observation but the newest gets weight zero.">The average of every observation so far</li>
+      <li data-why="That is what λ = 0 would give: the EWMA would never move from its starting value.">The starting value EWMA₀ at every period</li>
+      <li data-correct>The latest observation, the same as a Shewhart chart</li>
+      <li data-why="A moving average gives equal weight to a fixed window. The EWMA's weights are never equal unless only one point counts.">A 5-point moving average</li>
+    </ul>
+    <div class="check-explain"><p>With <span class="m">\lambda = 1</span> the recursion becomes <span class="m">\text{EWMA}_t = Y_t + 0 \cdot \text{EWMA}_{t-1} = Y_t</span>. The chart plots each observation on its own, which is a Shewhart chart for individual values.</p></div>
+  </div>
+</section>
+
+<section id="limits">
+  <h2>Control limits</h2>
+  <p>Averaging shrinks variation, so the EWMA needs narrower limits than the raw data. If the observations have standard deviation <span class="m">s</span>, estimated from in-control historical data, the variance of the EWMA settles down to</p>
+  <div class="eq">s^2_{\text{ewma}} = \frac{\lambda}{2-\lambda}\, s^2</div>
+  <p>and the control limits sit <span class="m">k</span> of those standard deviations either side of the starting value:</p>
+  <div class="eq-grid"><div class="eq">\text{UCL} = \text{EWMA}_0 + k\, s_{\text{ewma}}</div><div class="eq">\text{LCL} = \text{EWMA}_0 - k\, s_{\text{ewma}}</div></div>
+  <p>The handbook writes <span class="m">k</span> for the width of the limits, usually 3. It is a different quantity from the allowance <span class="m">k</span> of a CUSUM. At <span class="m">\lambda = 0.3</span>, <span class="m">\sqrt{\lambda/(2-\lambda)} = 0.42</span>, so the EWMA's limits are 42% as wide as limits for single observations.</p>
+  <p>The variance formula holds once the chart has run for a while. In the first few periods the EWMA still leans on <span class="m">\text{EWMA}_0</span>, a fixed number with no variance, so its true standard deviation is smaller:</p>
+  <div class="eq">s_{\text{ewma}}(t) = s\,\sqrt{\frac{\lambda}{2-\lambda}\left[1-(1-\lambda)^{2t}\right]}</div>
+  <p>The bracket equals <span class="m">1-(1-\lambda)^2</span> at <span class="m">t = 1</span> and climbs toward 1, so these exact limits start narrow and fan out to the asymptotic ones. With <span class="m">\lambda = 0.3</span> they are within 0.01 of the asymptotic limits by about period 7. Exact limits catch a process that starts off target a little sooner. The handbook's example uses the asymptotic limits.</p>
+
+  <div class="check" id="m7-q2" data-answer="52.59" data-tolerance="0.01">
+    <p class="check-q">The handbook's example uses <span class="m">\text{EWMA}_0 = 50</span>, <span class="m">s = 2.0539</span>, <span class="m">\lambda = 0.3</span> and <span class="m">k = 3</span>. Compute the asymptotic UCL to two decimals.</p>
+    <div class="check-explain"><p><span class="m">\sqrt{0.3/1.7} = 0.4201</span>, so <span class="m">s_{\text{ewma}} = 0.4201 \times 2.0539 = 0.8628</span>. The UCL is <span class="m">50 + 3 \times 0.8628 = 52.59</span> and the LCL is <span class="m">47.41</span>. The handbook prints 52.5884 and 47.4115.</p></div>
+  </div>
+</section>
+
+<section id="example">
+  <h2>The handbook example</h2>
+  <p>The handbook's example monitors 20 observations of a process with a historical mean of 50 and standard deviation <span class="m">s = 2.0539</span>, using <span class="m">\lambda = 0.3</span> and <span class="m">k = 3</span>. The first EWMA is <span class="m">0.3 \times 52.0 + 0.7 \times 50 = 50.60</span>, and each later value follows from the one before.</p>
+
+  <figure class="fig" id="fig-example">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">The handbook's EWMA chart</h3></div>
+    <div class="controls">
+      <label class="control" for="ex-lambda">
+        <span class="control-label">Weighting constant λ <output for="ex-lambda">0.30</output></span>
+        <input type="range" id="ex-lambda" min="0.05" max="1" step="0.05" value="0.3">
+      </label>
+      <div class="control">
+        <span class="control-label">Limits</span>
+        <div class="seg" id="ex-limits">
+          <button data-value="asym" aria-pressed="true">Asymptotic</button>
+          <button data-value="exact">Exact</button>
+        </div>
+      </div>
+    </div>
+    <div class="fig-chart" id="ex-chart"></div>
+    <ul class="legend" id="ex-legend"></ul>
+    <div id="ex-readouts"></div>
+    <details class="data"><summary>Data table</summary><div class="table-wrap" id="ex-table"></div></details>
+    <figcaption>Gray dots are the raw observations and the blue line is the EWMA, starting from 50 at period 0. At λ = 0.3 the values match the handbook's. Every EWMA value stays inside the limits, so the chart gives no signal, and the last five climb steadily from 49.92 to 51.99. Switch to exact limits to see them fan out over the first few periods. Raise λ toward 1 and the EWMA starts to chase single points while the limits widen toward the individuals limits <span class="m">50 \pm 3s</span>, which are 43.84 and 56.16.</figcaption>
+  </figure>
+
+  <p>The handbook concludes that the process is in control and draws attention to the upward drift over the last five periods. The raw values have all been above 50 since period 16. One more reading of 54.0 or higher in period 21 would carry the EWMA past the UCL, so this is a chart to keep watching and a good moment to ask what changed around period 16.</p>
+
+  <div class="pitfall">
+    <span class="eyebrow">Common mistake</span>
+    <p>Do not judge raw observations against the EWMA's limits. Five observations here lie outside 47.41 to 52.59, and none of them is a signal. The limits belong to the EWMA statistic; single observations have their own, wider limits.</p>
+  </div>
+
+  <div class="check" id="m7-q3" data-answer="49.52" data-tolerance="0.01">
+    <p class="check-q">In the handbook example <span class="m">\text{EWMA}_1 = 50.60</span>, the second observation is <span class="m">Y_2 = 47.0</span> and <span class="m">\lambda = 0.3</span>. Compute <span class="m">\text{EWMA}_2</span> to two decimals.</p>
+    <div class="check-explain"><p><span class="m">\text{EWMA}_2 = 0.3 \times 47.0 + 0.7 \times 50.60 = 14.10 + 35.42 = 49.52</span>, the handbook's second value. The new observation sits 3.6 below the previous EWMA, and the EWMA moves only <span class="m">0.3 \times 3.6 = 1.08</span> toward it.</p></div>
+  </div>
+</section>
+
+<section id="choosing">
+  <h2>Choosing λ and k</h2>
+  <p>The two settings work together. A small <span class="m">\lambda</span> gives the chart a long memory, which suits small shifts, and it also narrows the limits, so <span class="m">k</span> has to be chosen to keep false alarms rare. Hunter (1986) suggests a <span class="m">\lambda</span> between 0.2 and 0.3, a choice the handbook calls somewhat arbitrary. Lucas and Saccucci (1990) published tables of run lengths for many pairs of <span class="m">\lambda</span> and <span class="m">k</span>, so you can pick the pair that keeps false alarms as rare as you need and detects your shift of interest fastest.</p>
+  <p>Each pair below comes from those tables and gives an in-control average run length (ARL) of about 500 observations. The run lengths after a shift were computed for this course with a Markov-chain approximation.</p>
+
+  <div class="table-scroll">
+    <table class="ref">
+      <thead><tr><th class="num">λ</th><th class="num">k</th><th class="num">ARL, 0.5σ shift</th><th class="num">ARL, 1σ shift</th><th class="num">ARL, 2σ shift</th><th class="num">ARL, 3σ shift</th></tr></thead>
+      <tbody>
+        <tr><td class="num">0.05</td><td class="num">2.615</td><td class="num">28.8</td><td class="num">11.4</td><td class="num">5.22</td><td class="num">3.50</td></tr>
+        <tr><td class="num">0.10</td><td class="num">2.814</td><td class="num">31.3</td><td class="num">10.3</td><td class="num">4.36</td><td class="num">2.87</td></tr>
+        <tr><td class="num">0.20</td><td class="num">2.962</td><td class="num">41.8</td><td class="num">10.5</td><td class="num">3.74</td><td class="num">2.38</td></tr>
+        <tr><td class="num">0.40</td><td class="num">3.054</td><td class="num">71.2</td><td class="num">14.3</td><td class="num">3.52</td><td class="num">2.02</td></tr>
+        <tr><td class="num">1 (Shewhart)</td><td class="num">3.090</td><td class="num">202</td><td class="num">54.6</td><td class="num">7.26</td><td class="num">2.15</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Read down a column to choose. For a 0.5σ shift the smallest <span class="m">\lambda</span> is fastest, for a 1σ shift values around 0.1 to 0.2 are best, and by 2σ to 3σ the larger <span class="m">\lambda = 0.4</span> leads. The Shewhart row is slowest everywhere below 3σ.</p>
+
+  <figure class="fig" id="fig-race">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Detection race: EWMA against Shewhart</h3></div>
+    <div class="controls">
+      <label class="control" for="race7-lambda">
+        <span class="control-label">Weighting constant λ <output for="race7-lambda">0.20</output></span>
+        <input type="range" id="race7-lambda" min="0.05" max="1" step="0.05" value="0.2">
+      </label>
+      <label class="control" for="race7-k">
+        <span class="control-label">Limit width k <output for="race7-k">3.000</output></span>
+        <input type="range" id="race7-k" min="2.4" max="3.4" step="0.001" value="3">
+      </label>
+      <label class="control" for="race7-shift">
+        <span class="control-label">Shift to read off <output for="race7-shift">1.00σ</output></span>
+        <input type="range" id="race7-shift" min="0" max="3" step="0.25" value="1">
+      </label>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn small" id="race7-new" type="button">New runs</button>
+      </div>
+    </div>
+    <div class="fig-chart" id="race7-chart"></div>
+    <ul class="legend" id="race7-legend"></ul>
+    <div id="race7-readouts"></div>
+    <figcaption>Each blue point averages 300 simulated runs of an EWMA chart with asymptotic limits, started on target, after a shift of the size on the horizontal axis; the bars span ±2 standard errors. The gray curve is the exact ARL of a 3σ Shewhart chart for individual values. The vertical axis is logarithmic. With λ = 0.2 and k = 3 the EWMA's in-control ARL is about 560, well above the Shewhart chart's 370, yet it catches a 1σ shift in about 11 observations instead of 44. Push λ to 1 and the two charts become the same. Try a pair from the table, such as λ = 0.1 with k = 2.814, and press New runs to see how much the simulation itself varies.</figcaption>
+  </figure>
+
+  <div class="check" id="m7-q4">
+    <p class="check-q">You need to catch shifts of about 0.5σ quickly, with an in-control ARL near 500. Based on the table, which design should you pick?</p>
+    <ul class="check-options">
+      <li data-why="A large λ forgets quickly, so a small shift never builds up: its ARL at 0.5σ is 71.2.">λ = 0.40 with k = 3.054</li>
+      <li data-correct>λ = 0.05 with k = 2.615</li>
+      <li data-why="A Shewhart chart looks at one point at a time and needs about 202 observations to catch a 0.5σ shift.">λ = 1, a Shewhart chart with 3.09σ limits</li>
+      <li data-why="Equal in-control ARLs make the designs comparable; they still differ widely once the mean shifts.">Any of them, since they share the same in-control ARL</li>
+    </ul>
+    <div class="check-explain"><p>For a 0.5σ shift, λ = 0.05 has the shortest ARL in the table, 28.8 observations. A long memory lets a small, persistent shift accumulate. The price is slower response to large shifts: at 3σ it needs 3.50 observations against 2.02 for λ = 0.4.</p></div>
+  </div>
+</section>
+
+<section id="in-practice">
+  <h2>Using an EWMA chart well</h2>
+  <p>The starting value <span class="m">\text{EWMA}_0</span> and the standard deviation <span class="m">s</span> come from historical data, and the handbook stresses that those data must describe the process while it was in control. If they do not, finish the Phase I work described in <a href="01-variation.html#monitoring-and-control">module 1</a> first: find the special causes in the history, remove the affected data, and only then compute the baseline.</p>
+  <p>The limits also assume independent observations, and Lucas and Saccucci's tables assume normal data. Positively autocorrelated data, common in continuous and chemical processes, make the EWMA vary more than the formula expects, so false alarms become frequent. <a href="11-time-series.html">Module 11</a> covers models for such data.</p>
+
+  <div class="check" id="m7-q5">
+    <p class="check-q">Your historical data include a week when a heater failed and the process ran hot. What should you do before computing <span class="m">\text{EWMA}_0</span> and <span class="m">s</span>?</p>
+    <ul class="check-options">
+      <li data-correct>Remove the heater week, since its cause is known, and compute the baseline from the remaining in-control data</li>
+      <li data-why="Smoothing does not repair a biased baseline. The hot week would raise EWMA₀ and inflate s, widening the limits.">Keep all the data, because the EWMA smooths out unusual periods</li>
+      <li data-why="λ controls how the chart weights new data. It has no effect on a baseline computed from bad historical data.">Use a small λ so the hot week carries little weight</li>
+    </ul>
+    <div class="check-explain"><p>The baseline must describe the process when only common causes act. A period with a known special cause belongs outside it. Left in, it would shift <span class="m">\text{EWMA}_0</span>, inflate <span class="m">s</span>, and make the chart slower to notice the next real problem.</p></div>
+  </div>
+
+  <h3>The EWMA as a forecast</h3>
+  <p>The EWMA through period <span class="m">t</span> is also a sensible forecast of the observation at period <span class="m">t+1</span>: a weighted average of the past that leans on recent data. Forecasters call the same recursion simple exponential smoothing, and they choose <span class="m">\lambda</span> to make the one-step forecast errors small.</p>
+
+  <figure class="fig" id="fig-forecast">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">The EWMA as a one-step forecast</h3></div>
+    <div class="controls">
+      <label class="control" for="fc-lambda">
+        <span class="control-label">Weighting constant λ <output for="fc-lambda">0.30</output></span>
+        <input type="range" id="fc-lambda" min="0.05" max="1" step="0.05" value="0.3">
+      </label>
+    </div>
+    <div class="fig-chart" id="fc-chart"></div>
+    <ul class="legend" id="fc-legend"></ul>
+    <div id="fc-readouts"></div>
+    <figcaption>The handbook's 20 observations again. The violet line is the forecast for each period, which is the EWMA through the period before, and the gray segments are the forecast errors. Move λ and watch the sum of squared errors. For these data it is smallest near λ = 0.1, because the observations scatter around a nearly constant level and a long memory predicts that level best. The typical error then roughly equals the process standard deviation, as it should when what remains is noise. <a href="11-time-series.html">Module 11</a> develops exponential smoothing as a forecasting method.</figcaption>
+  </figure>
+
+  <p>Tuned for the same shift and the same in-control ARL, EWMA and CUSUM charts detect small shifts about equally fast. A two-sided CUSUM with <span class="m">k = 0.5\sigma</span> and <span class="m">h = 5\sigma</span> has an in-control ARL of 465 and catches a 1σ shift in 10.4 samples on average; an EWMA with <span class="m">\lambda = 0.1</span> and <span class="m">k = 2.814</span> manages 500 and 10.3. The EWMA's plotted value is an average on the scale of the data, which makes it easy to read alongside the measurements.</p>
+</section>
+
+<section id="summary" class="summary">
+  <h2>Takeaways</h2>
+  <ul>
+    <li>The EWMA updates as <span class="m">\lambda Y_t + (1-\lambda)\,\text{EWMA}_{t-1}</span>. Weights fall off geometrically with age, and <span class="m">\lambda = 1</span> gives a Shewhart chart.</li>
+    <li>The limits are <span class="m">\text{EWMA}_0 \pm k\, s\sqrt{\lambda/(2-\lambda)}</span>. Exact limits include the factor <span class="m">1-(1-\lambda)^{2t}</span> and start narrower.</li>
+    <li>Small <span class="m">\lambda</span> (0.05 to 0.2) suits small shifts; larger <span class="m">\lambda</span> reacts faster to large ones. Hunter suggests 0.2 to 0.3, and Lucas and Saccucci's tables pair each <span class="m">\lambda</span> with a <span class="m">k</span>.</li>
+    <li>In the handbook example every EWMA value stays inside 47.41 to 52.59, but the last five periods drift upward and deserve attention.</li>
+    <li>Base <span class="m">\text{EWMA}_0</span> and <span class="m">s</span> on in-control historical data, and check that observations are roughly independent.</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>

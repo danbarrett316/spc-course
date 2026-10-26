@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en" class="math-pending">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>X̄ and R or s charts · In Control</title>
+<meta name="description" content="Chart subgroup averages and spread: rational subgroups, estimating sigma from ranges or standard deviations, and the constants behind the limits.">
+<script>try{var t=localStorage.getItem('in-control:theme');if(t&&t!=='system')document.documentElement.dataset.theme=t}catch(e){}setTimeout(function(){document.documentElement.classList.remove('math-pending')},3000)</script>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="X̄ and R or s charts · In Control">
+<meta property="og:description" content="Chart subgroup averages and spread: rational subgroups, estimating sigma from ranges or standard deviations, and the constants behind the limits.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap">
+<link rel="stylesheet" href="../assets/css/course.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script type="module" src="../assets/js/course.js"></script>
+<script type="module" src="../assets/js/modules/03-xbar-r-s.js"></script>
+</head>
+<body data-module="3">
+<div class="shell">
+<nav class="rail" id="rail"></nav>
+<main class="page" id="main">
+
+<header class="module-head">
+  <h1>X̄ and R or s charts</h1>
+  <p class="lede">Most variables charts in industry track the average of a small subgroup and the spread inside it, side by side. This module shows why averaging helps, how to form subgroups that keep the chart honest, and where each constant in the limit formulas comes from.</p>
+</header>
+
+<section id="why-averages">
+  <h2>Why chart averages</h2>
+  <p>A lathe turns steel shafts to a nominal diameter of 25.000&nbsp;mm. Every hour an inspector measures a few shafts made one after another. You could plot each shaft on its own. The standard Shewhart chart in the handbook plots the average of each small group instead. The group is a <strong>subgroup</strong>, and its size is <span class="m">n</span>.</p>
+  <p>Averages vary less than the values they come from. If single diameters have standard deviation <span class="m">\sigma</span>, the average of <span class="m">n</span> independent diameters has standard deviation</p>
+  <div class="eq">\sigma_{\bar{x}} = \frac{\sigma}{\sqrt{n}}</div>
+  <p>With four shafts per subgroup the averages scatter half as much as single shafts, and the control limits close in by the same factor. A shift in the process mean moves the averages just as far as it moves single shafts, so against the tighter limits it stands out sooner. Averages also follow the normal curve more closely than single values do, so the 0.27% false-alarm rate from <a href="02-control-charts.html#three-sigma">module 2</a> holds up even when the raw measurements are a little skewed.</p>
+
+  <figure class="fig" id="fig-averages">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Averages vary less, so a shift stands out</h3></div>
+    <div class="controls">
+      <label class="control" for="avg-n">
+        <span class="control-label">Subgroup size <output for="avg-n"></output></span>
+        <input type="range" id="avg-n" min="1" max="10" step="1" value="4">
+      </label>
+      <label class="control" for="avg-shift">
+        <span class="control-label">Shift in the process mean <output for="avg-shift"></output></span>
+        <input type="range" id="avg-shift" min="0" max="1.5" step="0.25" value="1">
+      </label>
+    </div>
+    <div class="fig-split">
+      <div class="fig-chart" id="avg-dist"></div>
+      <div class="fig-chart" id="avg-bars"></div>
+    </div>
+    <ul class="legend" id="avg-legend"></ul>
+    <div id="avg-readouts"></div>
+    <figcaption>Left: the gray curve shows how single shaft diameters vary (σ = 0.010&nbsp;mm). The blue curve shows how subgroup averages vary, with control limits at three standard deviations of the average. The dashed curve shows the averages after the process mean moves by the chosen shift, and its red tail is the chance that the next subgroup lands beyond a limit. Right: that chance for every subgroup size. Slide the subgroup size from 1 to 10 and watch the blue curve narrow and the limits close in. Then set the shift to zero. Every bar drops to the same 0.27%, so larger subgroups buy sensitivity without extra false alarms.</figcaption>
+  </figure>
+
+  <div class="check" id="m3-q1">
+    <p class="check-q">Single shaft diameters have a standard deviation of 0.010&nbsp;mm. You chart the average of each subgroup of 4 shafts. What is the standard deviation of the plotted averages?</p>
+    <ul class="check-options">
+      <li data-why="That is the spread of single shafts. Averaging four of them reduces it.">0.010 mm</li>
+      <li data-why="Dividing by n instead of √n understates the spread. Variances divide by n; standard deviations divide by √n.">0.0025 mm</li>
+      <li data-correct>0.005 mm</li>
+      <li data-why="Averages never vary more than the values they come from.">0.020 mm</li>
+    </ul>
+    <div class="check-explain"><p><span class="m">\sigma_{\bar{x}} = \sigma/\sqrt{n} = 0.010/\sqrt{4} = 0.005</span> mm. Halving the spread of the plotted points halves the distance from the center line to each control limit.</p></div>
+  </div>
+</section>
+
+<section id="rational-subgroups">
+  <h2>Rational subgroups</h2>
+  <p>An X̄ chart compares two kinds of variation. The spread <em>within</em> each subgroup sets the width of the limits. The differences <em>between</em> subgroup averages are what the chart watches. Shewhart's advice was to form subgroups so that the first kind contains only common-cause variation, leaving any special cause to show up in the second. He called subgroups chosen this way <strong>rational</strong>.</p>
+  <p>In practice a rational subgroup is usually a few consecutive units from one machine, one cavity or nozzle, one operator and one lot of material, collected over a span short enough that nothing is likely to change inside it. The time between subgroups then gives special causes room to appear.</p>
+
+  <figure class="fig" id="fig-heads">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Two filling heads, two ways to subgroup</h3></div>
+    <div class="controls">
+      <div class="control">
+        <span class="control-label">Form each subgroup from</span>
+        <div class="seg" id="heads-mode">
+          <button data-value="mixed" aria-pressed="true">Both heads mixed</button>
+          <button data-value="within">One head at a time</button>
+        </div>
+      </div>
+      <div class="control-row">
+        <label class="check-inline"><input type="checkbox" id="heads-shift" checked> Head 1 runs 1&nbsp;mL high from sample 21</label>
+      </div>
+    </div>
+    <div class="fig-chart" id="heads-chart"></div>
+    <ul class="legend" id="heads-legend"></ul>
+    <div id="heads-readouts"></div>
+    <figcaption>A two-head filler puts about 501&nbsp;mL in each bottle from head 1 and about 499&nbsp;mL in each bottle from head 2. Within either head, bottles vary with a standard deviation of 0.5&nbsp;mL. Limits come from samples 1 to 15 and are then frozen. Mixed subgroups take two bottles from each head, so every range includes the 2&nbsp;mL gap between heads. The limits balloon, and nearly every average sits in the middle third. Switch to one head at a time. The limits shrink to the true bottle-to-bottle noise, the gap between the heads becomes obvious, and head 1's shift breaks its upper limit.</figcaption>
+  </figure>
+
+  <p>The mixed chart shows a pattern called <strong>stratification</strong>. Points crowd the center line, with far fewer near the limits than chance predicts. Stratification can pass for an unusually steady process. Its cause is that each subgroup mixes streams with different means, so the range measures the gap between streams, and the chart cannot see any change smaller than that gap.</p>
+  <div class="key-idea">
+    <span class="eyebrow">Key idea</span>
+    <p>Put only common-cause variation inside a subgroup. Whatever you mix into a subgroup becomes part of the noise the chart ignores.</p>
+  </div>
+
+  <div class="check" id="m3-q2">
+    <p class="check-q">For six weeks, every point on an X̄ chart of fill volume has sat close to the center line, and none has come near a limit. Each subgroup takes one bottle from each of four filling heads. What is the most likely explanation?</p>
+    <ul class="check-options">
+      <li data-why="A stable process still puts about a third of its points outside the middle third of the chart. Points that hug the center line for weeks point to a problem with the limits.">The process is exceptionally stable, and no action is needed</li>
+      <li data-why="A coarse gauge rounds readings, which tends to produce ranges of zero and points that sit on a few discrete levels. It does not pull every average toward the center line.">The gauge is too coarse to show real differences</li>
+      <li data-correct>The heads have different means, which inflates the ranges and widens the limits</li>
+      <li data-why="Every subgroup has the same size, so the same A₂ applies throughout. The pattern comes from what goes into each subgroup.">The wrong A₂ constant was used for subgroups of four</li>
+    </ul>
+    <div class="check-explain"><p>This is stratification. Differences between heads appear inside every subgroup, so <span class="m">\bar{R}</span> overstates the common-cause spread and the limits are too wide for the averages they enclose. Subgroup by head, or chart each head separately, and the chart regains its sensitivity.</p></div>
+  </div>
+</section>
+
+<section id="estimating-sigma">
+  <h2>Estimating sigma from subgroups</h2>
+  <p>The limits need the process standard deviation <span class="m">\sigma</span>, which is never known exactly. The handbook gives two ways to estimate it from <span class="m">m</span> subgroups of size <span class="m">n</span>. Both use only the spread within subgroups, which is what makes rational subgrouping matter.</p>
+  <p><strong>From ranges.</strong> The range <span class="m">R</span> of a subgroup is its largest value minus its smallest. For normal data the average range is proportional to <span class="m">\sigma</span>, <span class="m">E(R) = d_2\,\sigma</span>, where <span class="m">d_2</span> depends only on <span class="m">n</span>. Dividing the average range by <span class="m">d_2</span> estimates <span class="m">\sigma</span>.</p>
+  <p><strong>From standard deviations.</strong> The sample standard deviation <span class="m">s</span> runs slightly low on average, <span class="m">E(s) = c_4\,\sigma</span> with <span class="m">c_4 &lt; 1</span>. Dividing by <span class="m">c_4</span> removes the bias.</p>
+  <div class="eq">\hat{\sigma} = \frac{\bar{R}}{d_2} \qquad\text{or}\qquad \hat{\sigma} = \frac{\bar{s}}{c_4}</div>
+  <dl class="where">
+    <dt><span class="m">\bar{R}</span></dt><dd>average of the <span class="m">m</span> subgroup ranges</dd>
+    <dt><span class="m">\bar{s}</span></dt><dd>average of the <span class="m">m</span> subgroup standard deviations</dd>
+    <dt><span class="m">d_2,\ c_4</span></dt><dd>constants that depend only on the subgroup size <span class="m">n</span></dd>
+  </dl>
+  <p>Neither constant is mysterious. <span class="m">d_2</span> is the average range of <span class="m">n</span> values drawn from a standard normal distribution, and <span class="m">c_4</span> is the average of their standard deviation. You can find both by simulation.</p>
+
+  <figure class="fig" id="fig-d2">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Where d₂ and c₄ come from</h3></div>
+    <div class="controls">
+      <label class="control" for="d2-n">
+        <span class="control-label">Values per draw, n <output for="d2-n"></output></span>
+        <input type="range" id="d2-n" min="2" max="10" step="1" value="5">
+      </label>
+      <div class="control">
+        <span class="control-label">Statistic</span>
+        <div class="seg" id="d2-stat">
+          <button data-value="r" aria-pressed="true">Range R</button>
+          <button data-value="s">Standard deviation s</button>
+        </div>
+      </div>
+      <div class="control-row">
+        <button class="btn primary" id="d2-more" type="button">Draw 1,000 more</button>
+        <button class="btn ghost" id="d2-reset" type="button">Start over</button>
+      </div>
+    </div>
+    <div class="fig-split">
+      <div class="fig-chart" id="d2-hist"></div>
+      <div class="fig-chart" id="d2-trace"></div>
+    </div>
+    <ul class="legend" id="d2-legend"></ul>
+    <div id="d2-readouts"></div>
+    <figcaption>Each draw takes <span class="m">n</span> values from a normal distribution with <span class="m">\sigma = 1</span> and records their range, or their standard deviation. Left: a histogram of every draw so far, the exact distribution as a curve, and the table constant as a dashed line. Right: the running average after each draw, on a logarithmic scale of draws, inside a band of two standard errors around the constant. Draw more and the average settles onto <span class="m">d_2</span> or <span class="m">c_4</span>. Raise <span class="m">n</span> and the typical range grows, because more values reach further into the tails.</figcaption>
+  </figure>
+
+  <p>The histogram also shows that a single range is a rough estimate. For subgroups of five, nine ranges in ten fall somewhere between about 1 and 4 standard deviations. Averaging the ranges of 25 or more subgroups is what makes <span class="m">\bar{R}/d_2</span> dependable.</p>
+</section>
+
+<section id="limits">
+  <h2>The control limits</h2>
+  <p>Put the estimate of <span class="m">\sigma</span> into Shewhart's recipe for an average, <span class="m">\bar{\bar{x}} \pm 3\hat{\sigma}/\sqrt{n}</span>, and fold the constants into a single factor. With ranges, the X̄ and R charts are</p>
+  <div class="eq">\begin{aligned}
+  \bar{x}\text{ chart:}\quad &amp; \text{UCL} = \bar{\bar{x}} + A_2\bar{R},\quad \text{CL} = \bar{\bar{x}},\quad \text{LCL} = \bar{\bar{x}} - A_2\bar{R}\\
+  R\text{ chart:}\quad &amp; \text{UCL} = D_4\bar{R},\quad \text{CL} = \bar{R},\quad \text{LCL} = D_3\bar{R}
+  \end{aligned}</div>
+  <p>where <span class="m">A_2 = 3/(d_2\sqrt{n})</span>. The R chart applies the same three-sigma recipe to the range itself. Its standard deviation is <span class="m">d_3\sigma</span>, which gives <span class="m">D_4 = 1 + 3d_3/d_2</span> and <span class="m">D_3 = 1 - 3d_3/d_2</span>. For <span class="m">n \le 6</span> that lower value is negative, and since a range cannot be negative, <span class="m">D_3</span> is set to zero.</p>
+  <p>With standard deviations, the X̄ and s charts are</p>
+  <div class="eq">\begin{aligned}
+  \bar{x}\text{ chart:}\quad &amp; \text{UCL} = \bar{\bar{x}} + A_3\bar{s},\quad \text{CL} = \bar{\bar{x}},\quad \text{LCL} = \bar{\bar{x}} - A_3\bar{s}\\
+  s\text{ chart:}\quad &amp; \text{UCL} = B_4\bar{s},\quad \text{CL} = \bar{s},\quad \text{LCL} = B_3\bar{s}
+  \end{aligned}</div>
+  <p>where <span class="m">A_3 = 3/(c_4\sqrt{n})</span> and <span class="m">B_4, B_3 = 1 \pm 3\sqrt{1-c_4^2}/c_4</span>, with <span class="m">B_3</span> again floored at zero.</p>
+  <dl class="where">
+    <dt><span class="m">\bar{\bar{x}}</span></dt><dd>grand average: the average of all the subgroup averages</dd>
+    <dt><span class="m">d_3</span></dt><dd>standard deviation of the range of <span class="m">n</span> standard normal values</dd>
+    <dt><span class="m">A_2, D_3, D_4</span></dt><dd>factors for the X̄ and R charts</dd>
+    <dt><span class="m">A_3, B_3, B_4</span></dt><dd>factors for the X̄ and s charts</dd>
+  </dl>
+  <div class="from-nist">
+    <span class="eyebrow">Handbook 6.3.2.1</span>
+    <p>The handbook derives both pairs of charts this way and tabulates <span class="m">A_2</span>, <span class="m">D_3</span> and <span class="m">D_4</span> for subgroups of 2 to 10. For <span class="m">n = 5</span>, for example, <span class="m">A_2 = 0.577</span> and <span class="m">D_4 = 2.115</span>. The table in the next figure computes the same factors from <span class="m">d_2</span>, <span class="m">d_3</span> and <span class="m">c_4</span>. <a href="https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc321.htm" target="_blank" rel="noopener">Read section 6.3.2.1</a>.</p>
+  </div>
+
+  <figure class="fig" id="fig-build">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Build an X̄ chart with its R or s chart</h3></div>
+    <div class="controls">
+      <label class="control" for="build-n">
+        <span class="control-label">Subgroup size <output for="build-n"></output></span>
+        <input type="range" id="build-n" min="2" max="10" step="1" value="5">
+      </label>
+      <div class="control">
+        <span class="control-label">Spread chart</span>
+        <div class="seg" id="build-kind">
+          <button data-value="r" aria-pressed="true">R</button>
+          <button data-value="s">s</button>
+        </div>
+      </div>
+      <div class="control">
+        <span class="control-label">From subgroup 31</span>
+        <div class="seg" id="build-change">
+          <button data-value="none" aria-pressed="true">No change</button>
+          <button data-value="mean">Mean shifts</button>
+          <button data-value="spread">Spread doubles</button>
+        </div>
+      </div>
+      <div class="control-row">
+        <button class="btn small" id="build-new" type="button">New sample</button>
+      </div>
+    </div>
+    <div class="fig-chart" id="build-x"></div>
+    <div class="fig-chart" id="build-v"></div>
+    <ul class="legend" id="build-legend"></ul>
+    <div id="build-readouts"></div>
+    <details class="data" open><summary>Constants for subgroups of 2 to 10</summary><div class="table-wrap" id="build-table"></div></details>
+    <figcaption>Forty hourly subgroups of shaft diameters with a true σ of 0.010&nbsp;mm. Subgroups 1 to 25, Shewhart's minimum, set the limits; subgroups 26 to 40 are plotted against them. From subgroup 31 you can move the mean up by 0.012&nbsp;mm or double the spread. Hover a point to read its subgroup. Try the mean shift at n = 2 and then at n = 10: the larger subgroups catch it at once. Then double the spread. The R or s chart signals, and some X̄ points cross their limits even though the mean has not moved. The highlighted row of the table holds the factors for the current subgroup size.</figcaption>
+  </figure>
+
+  <div class="check" id="m3-q3" data-answer="25.017" data-tolerance="0.001" data-unit="mm">
+    <p class="check-q">Twenty-five subgroups of five shafts give <span class="m">\bar{\bar{x}} = 25.004</span>&nbsp;mm and <span class="m">\bar{R} = 0.023</span>&nbsp;mm. Using <span class="m">A_2 = 0.577</span>, what is the upper control limit of the X̄ chart, to three decimals?</p>
+    <div class="check-explain"><p><span class="m">\text{UCL} = 25.004 + 0.577 \times 0.023 = 25.004 + 0.0133 = 25.017</span>&nbsp;mm. The LCL is <span class="m">25.004 - 0.0133 = 24.991</span>&nbsp;mm. The R chart's upper limit is <span class="m">D_4\bar{R} = 2.115 \times 0.023 = 0.049</span>&nbsp;mm, and its lower limit is zero because <span class="m">D_3 = 0</span> for subgroups of five.</p></div>
+  </div>
+</section>
+
+<section id="r-or-s">
+  <h2>R or s?</h2>
+  <p>Both charts estimate the same <span class="m">\sigma</span>. They differ in precision. The range uses the two most extreme values in a subgroup and ignores the rest; the standard deviation uses every value. For two values the estimates are equivalent. As subgroups grow, the range falls behind.</p>
+  <div class="table-scroll">
+    <table class="ref">
+      <thead><tr><th>Subgroup size n</th><th class="num">2</th><th class="num">3</th><th class="num">4</th><th class="num">5</th><th class="num">6</th><th class="num">10</th></tr></thead>
+      <tbody><tr><td>Efficiency of R relative to s</td><td class="num">1.000</td><td class="num">0.992</td><td class="num">0.975</td><td class="num">0.955</td><td class="num">0.930</td><td class="num">0.850</td></tr></tbody>
+    </table>
+  </div>
+  <p>Relative efficiency compares the variances of the two estimates of <span class="m">\sigma</span>. At <span class="m">n = 5</span> the value 0.955 means the range-based estimate needs about 5% more subgroups to match the precision of the one based on <span class="m">s</span>. At <span class="m">n = 10</span> it needs about 18% more.</p>
+  <div class="from-nist">
+    <span class="eyebrow">Handbook 6.3.2.1</span>
+    <p>The handbook gives the efficiency table above and concludes that the range works well for subgroups up to about 10. For larger subgroups it recommends the standard deviation. Typical subgroups have 4 or 5 units, where little is lost by using the range. <a href="https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc321.htm" target="_blank" rel="noopener">Read section 6.3.2.1</a>.</p>
+  </div>
+  <p>The range survives because it is easy to compute by hand on the shop floor and easy to explain. When software does the arithmetic, the s chart costs nothing extra at any subgroup size.</p>
+
+  <div class="check" id="m3-q4">
+    <p class="check-q">A tablet press is sampled every 30 minutes, and each subgroup weighs 15 tablets. Which chart should track the spread?</p>
+    <ul class="check-options">
+      <li data-correct>An s chart, because the range wastes information in subgroups larger than about 10</li>
+      <li data-why="The range ignores 13 of the 15 values in each subgroup. Its efficiency keeps falling as subgroups grow.">An R chart, because it is the standard choice</li>
+      <li data-why="Moving ranges are for one value per subgroup. Here each subgroup has 15 values to estimate spread from.">A moving range chart of the subgroup averages</li>
+      <li data-why="Both are valid, but they are not equally precise. At n = 15 the s chart is clearly better.">Either one, since they give identical limits</li>
+    </ul>
+    <div class="check-explain"><p>The handbook recommends the range only up to subgroups of about 10. With 15 tablets per subgroup, <span class="m">\bar{s}/c_4</span> estimates <span class="m">\sigma</span> more precisely, so use the X̄ and s charts.</p></div>
+  </div>
+</section>
+
+<section id="in-practice">
+  <h2>Running the charts</h2>
+  <p>A few habits make X̄ charts trustworthy.</p>
+  <ol class="steps">
+    <li><span><strong>Read the spread chart first.</strong> The X̄ limits are built from <span class="m">\bar{R}</span> or <span class="m">\bar{s}</span>. If the spread is unstable, those limits are unreliable, and an X̄ point beyond them may reflect extra spread rather than a moved mean. Bring the R or s chart into control, then judge the averages.</span></li>
+    <li><span><strong>Collect enough subgroups.</strong> Shewhart suggested at least 25 subgroups of size 4, all in control, before concluding that a process is stable. With fewer, the limits depend heavily on which subgroups happened to be drawn, and the textbook false-alarm rates, which assume known parameters, no longer hold.</span></li>
+    <li><span><strong>Recompute the limits only for a reason.</strong> The handbook lists three: at least 30 new points with no known process change, which sharpen the estimate of spread; a major change to the process; and the removal of data from a preventable disruption, such as a power outage or a bad lot of consumables. Recomputing on a schedule lets the limits follow the process and hides slow changes.</span></li>
+    <li><span><strong>Expect the occasional false alarm.</strong> For a stable normal process each subgroup has a 0.27% chance of plotting outside three-sigma limits, so the in-control average run length is <span class="m">1/0.0027 \approx 370</span> subgroups. At one subgroup an hour, around the clock, that is a false alarm about every two weeks. <a href="02-control-charts.html#arl">Module 2</a> explains run lengths in detail.</span></li>
+  </ol>
+
+  <div class="check" id="m3-q5">
+    <p class="check-q">On the same set of 25 subgroups, the X̄ chart has one point above its UCL and the R chart has two points above its UCL. What should you do first?</p>
+    <ul class="check-options">
+      <li data-why="The X̄ limits depend on R̄. With unstable ranges, the X̄ signal may not mean what it appears to.">Look for what moved the process mean at the X̄ signal</li>
+      <li data-why="Widening the limits hides real signals. The limits should describe the process, not accommodate its problems.">Widen the X̄ limits until the point fits</li>
+      <li data-correct>Investigate the R chart signals, because the X̄ limits depend on a stable R̄</li>
+      <li data-why="Two of 25 ranges beyond the limit is far more than the 0.27% false-alarm rate predicts.">Ignore both, since 3 signals out of 50 points is normal</li>
+    </ul>
+    <div class="check-explain"><p>The spread chart comes first. If special causes are inflating some ranges, <span class="m">\bar{R}</span> is too large and the X̄ limits too wide, or the X̄ signal itself may come from extra spread in that subgroup. Find and remove the causes behind the R signals, recompute, and then judge the X̄ chart.</p></div>
+  </div>
+
+  <div class="check" id="m3-q6">
+    <p class="check-q">An X̄ and R chart has run in Phase II for three months with frozen limits. Which of these is a sound reason to recompute the limits?</p>
+    <ul class="check-options">
+      <li data-why="A single signal calls for an investigation. Recomputing the limits to absorb it defeats the chart.">Yesterday a point fell outside the UCL</li>
+      <li data-why="Control limits describe the process. Comparing them with specifications is a capability question, covered in module 8.">The limits look wide compared with the specification</li>
+      <li data-why="Recomputing on a schedule lets the limits drift with the process and hides slow changes.">It is the first day of a new quarter</li>
+      <li data-correct>The machine received a new spindle and has since run 30 subgroups with no signals</li>
+    </ul>
+    <div class="check-explain"><p>A major process change, here a new spindle, is a valid reason, and 30 or more new in-control points give a sound basis for the new limits. Signals, specifications and calendars are not reasons to move control limits.</p></div>
+  </div>
+</section>
+
+<section id="summary" class="summary">
+  <h2>Takeaways</h2>
+  <ul>
+    <li>Averages of <span class="m">n</span> values vary with standard deviation <span class="m">\sigma/\sqrt{n}</span>, so an X̄ chart sees a shift in the mean sooner than a chart of single values.</li>
+    <li>Form rational subgroups, with only common-cause variation inside each one, so that special causes appear between subgroups. Mixing streams inflates the limits and hides shifts.</li>
+    <li>Estimate <span class="m">\sigma</span> from the spread within subgroups, as <span class="m">\bar{R}/d_2</span> or <span class="m">\bar{s}/c_4</span>. The factors <span class="m">A_2, D_3, D_4</span> and <span class="m">A_3, B_3, B_4</span> turn that estimate into three-sigma limits.</li>
+    <li>Use the range for subgroups up to about 10 and the standard deviation for larger ones.</li>
+    <li>Read the R or s chart before the X̄ chart, base the limits on at least 25 subgroups, and recompute them only for a good reason.</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>

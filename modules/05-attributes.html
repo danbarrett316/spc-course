@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en" class="math-pending">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Charts for defects and defectives · In Control</title>
+<meta name="description" content="c, u, p and np charts for counts and proportions, stepped limits for unequal samples, and better limits when counts are small.">
+<script>try{var t=localStorage.getItem('in-control:theme');if(t&&t!=='system')document.documentElement.dataset.theme=t}catch(e){}setTimeout(function(){document.documentElement.classList.remove('math-pending')},3000)</script>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="Charts for defects and defectives · In Control">
+<meta property="og:description" content="c, u, p and np charts for counts and proportions, stepped limits for unequal samples, and better limits when counts are small.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap">
+<link rel="stylesheet" href="../assets/css/course.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script type="module" src="../assets/js/course.js"></script>
+<script type="module" src="../assets/js/modules/05-attributes.js"></script>
+<style>
+  /* Fig 5.1: the wafer map */
+  .wafer-map { display: grid; place-items: center; min-width: 0; }
+  .wafer-map svg { display: block; width: 100%; max-width: 300px; height: auto; }
+  .wafer-map .wf-disc { fill: var(--surface-2); stroke: var(--rule); stroke-width: 1.25; }
+  .wafer-map .wf-die { fill: var(--surface); stroke: var(--rule); stroke-width: 1; }
+  .wafer-map .wf-die.is-defective { fill: var(--alt); fill-opacity: 0.16; stroke: var(--alt); stroke-width: 1.5; }
+  .wafer-map .wf-defect { fill: var(--data); stroke: var(--surface); stroke-width: 0.8; }
+  /* a short numeric table does not need the full figure width */
+  .table-scroll.compact { max-width: 30rem !important; }
+</style>
+</head>
+<body data-module="5">
+<div class="shell">
+<nav class="rail" id="rail"></nav>
+<main class="page" id="main">
+
+<header class="module-head">
+  <h1>Charts for defects and defectives</h1>
+  <p class="lede">Some inspections end in a count instead of a measurement: scratches on a panel, chips that fail a probe test. This module builds control charts for counts and proportions from the Poisson and binomial models, and shows where their three-sigma limits mislead.</p>
+</header>
+
+<section id="defects-defectives">
+  <h2>Defects and defectives</h2>
+  <p>Many quality checks have no scale to read. An inspector looks over a painted car door and counts scratches, or a tester probes each chip on a wafer and marks it pass or fail. The handbook calls data like these <strong>attributes</strong>, because they come from counting or classifying. Attributes also make sense when a measurement exists but costs too much to take on every unit.</p>
+  <p>Attribute data come in two kinds. Mixing them up leads straight to the wrong chart.</p>
+  <div class="def-grid">
+    <div class="def">
+      <h3><span class="dot"></span>Defect</h3>
+      <span class="aka">Also called a nonconformity</span>
+      <p>One flaw: a scratch, a particle, a missing solder joint. A single unit can carry many defects, so you count them. The c and u charts track defects.</p>
+    </div>
+    <div class="def">
+      <h3><span class="dot alt"></span>Defective unit</h3>
+      <span class="aka">Also called a nonconforming unit</span>
+      <p>A unit with at least one defect serious enough to fail it. Each unit is either defective or not, so a door with three scratches still counts once. The p and np charts track defective units.</p>
+    </div>
+  </div>
+  <div class="from-nist">
+    <span class="eyebrow">Handbook 6.3.3</span>
+    <p>The handbook draws a finer line. A <em>nonconforming</em> unit fails a specification, while a <em>defective</em> unit fails to work as intended, and a unit can be one without the other. Most texts treat the two words as the same, and so does this module. See <a href="https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc33.htm" target="_blank" rel="noopener">section 6.3.3</a>.</p>
+  </div>
+
+  <figure class="fig" id="fig-wafer">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">One wafer, two counts</h3></div>
+    <div class="controls">
+      <label class="control" for="wafer-rate">
+        <span class="control-label">Average defects per chip <output for="wafer-rate"></output></span>
+        <input type="range" id="wafer-rate" min="0.05" max="1.5" step="0.05" value="0.3">
+      </label>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn" id="wafer-new" type="button">New wafer</button>
+      </div>
+    </div>
+    <div class="fig-split even">
+      <div class="wafer-map" id="wafer-map"></div>
+      <div class="fig-chart" id="wafer-curve"></div>
+    </div>
+    <ul class="legend" id="wafer-legend"></ul>
+    <div id="wafer-readouts"></div>
+    <figcaption>Each square is a chip and each blue mark is a defect. A chip with at least one defect is defective and turns violet. Slide the rate up and new defects land on the same wafer. The right panel plots the expected defects per chip (blue line) and the expected fraction of chips defective (violet curve), with this wafer's values as dots. Watch how far apart the two counts drift as defects become common.</figcaption>
+  </figure>
+
+  <p>When defects are rare, almost every defective chip holds exactly one defect, and the two counts nearly agree. As the rate rises, chips start collecting a second and third defect, which add to c and leave np unchanged. If defects land at random with an average of <span class="m">\lambda</span> per chip, a chip stays clean with probability <span class="m">e^{-\lambda}</span>, so the expected fraction defective is <span class="m">1 - e^{-\lambda}</span>. At <span class="m">\lambda = 0.3</span> that is 0.26, close to 0.3. At <span class="m">\lambda = 1.5</span> it is 0.78, and it can never pass 1.</p>
+  <p>Four charts cover attribute data. They differ in what they count and whether the sample size may change.</p>
+  <div class="table-scroll">
+    <table class="ref">
+      <thead><tr><th>Chart</th><th>Plots</th><th>Sample size</th><th>Model</th></tr></thead>
+      <tbody>
+        <tr><td><strong>c</strong></td><td>Defects in each sample</td><td>Constant</td><td>Poisson</td></tr>
+        <tr><td><strong>u</strong></td><td>Defects per inspection unit</td><td>Can vary</td><td>Poisson</td></tr>
+        <tr><td><strong>np</strong></td><td>Defective units in each sample</td><td>Constant</td><td>Binomial</td></tr>
+        <tr><td><strong>p</strong></td><td>Fraction of units defective</td><td>Can vary</td><td>Binomial</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The <a href="../reference/chooser.html">chart chooser</a> walks through the same decision, together with the charts for measurements.</p>
+
+  <div class="check" id="m5-q1">
+    <p class="check-q">An inspector checks a lot of 200 circuit boards. Seven boards have at least one bad solder joint, and those seven boards hold 19 bad joints between them. What value does a p chart plot for this lot?</p>
+    <ul class="check-options">
+      <li data-why="That is defects per board, the quantity a u chart tracks.">19/200 = 0.095</li>
+      <li data-why="Seven is the number of defective boards, which an np chart would plot. A p chart divides by the sample size.">7</li>
+      <li data-correct>7/200 = 0.035</li>
+      <li data-why="That is defects per defective board. No standard chart plots it.">19/7 = 2.7</li>
+    </ul>
+    <div class="check-explain"><p>A p chart tracks defective units as a fraction of the sample, here 7 of 200 boards, or 0.035. The 19 bad joints are defects, which belong on a c or u chart.</p></div>
+  </div>
+</section>
+
+<section id="c-chart">
+  <h2>The c chart counts defects</h2>
+  <p>Think of a wafer as thousands of places where a particle could land. Each place has a small chance of catching one, and the places act independently. Under those conditions the number of defects on a wafer follows the <strong>Poisson distribution</strong>. Its one parameter, c, is both the mean and the variance, so the standard deviation of a count is <span class="m">\sqrt{c}</span>.</p>
+  <p>The Poisson model is the limit of the binomial when there are many chances for a defect and each is unlikely. The handbook's rule of thumb asks for at least 20 opportunities, each with a probability of 0.05 or less. With 200 opportunities at 0.025 each, the binomial probability of exactly 3 defects is 0.1400, and the Poisson value with c = 5 is 0.1404.</p>
+  <div class="eq">\begin{aligned} UCL &amp;= \bar{c} + 3\sqrt{\bar{c}} \\ \text{Center line} &amp;= \bar{c} \\ LCL &amp;= \bar{c} - 3\sqrt{\bar{c}} \end{aligned}</div>
+  <dl class="where">
+    <dt><span class="m">\bar{c}</span></dt><dd>average number of defects per sample over the Phase I data</dd>
+    <dt><span class="m">\sqrt{\bar{c}}</span></dt><dd>estimated standard deviation of a single count</dd>
+  </dl>
+  <p>The size of each sample, called the inspection unit, must stay the same: one wafer, one door, or a fixed group such as five wafers. If the formula gives a negative LCL, set it to zero. Counts cannot fall below zero, so the chart then has no working lower limit.</p>
+  <p>The handbook's example counts defects on 25 successive wafers, each holding 100 chips. The wafers carry 400 defects in total, so <span class="m">\bar{c} = 400/25 = 16</span> and <span class="m">\sqrt{16} = 4</span>. The limits are <span class="m">16 \pm 12</span>, so UCL = 28 and LCL = 4.</p>
+
+  <figure class="fig" id="fig-c">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">The handbook's wafer defects on a c chart</h3></div>
+    <div class="controls">
+      <div class="control-row">
+        <label class="check-inline"><input type="checkbox" id="c-drop"> Treat wafer 24 as an assignable cause and recompute without it</label>
+      </div>
+    </div>
+    <div class="fig-chart" id="c-plot"></div>
+    <ul class="legend" id="c-legend"></ul>
+    <div id="c-readouts"></div>
+    <details class="data"><summary>Data table</summary><div class="table-wrap" id="c-table"></div></details>
+    <figcaption>Defects on 25 wafers from handbook section 6.3.3.1, with limits from the average count. Hover over a point to read it. Then tick the box to remove wafer 24 from the baseline and see what the tighter limits do to wafer 3.</figcaption>
+  </figure>
+
+  <p>Wafer 24, with 31 defects, lies above the UCL and signals. Wafer 3 has 28 defects and sits exactly on the UCL. A point has to fall beyond a limit to signal, so wafer 3 does not count, though an engineer would make a note of it.</p>
+  <p>Suppose the engineers trace wafer 24 to an assignable cause. Phase I practice from <a href="01-variation.html#monitoring-and-control">module 1</a> says to drop that point and recompute the limits from the rest. Tick the box to do it. The average falls, the UCL comes down with it, and wafer 3 now lies beyond the line. Removing one outlier often exposes the next, which is why Phase I repeats until no point with a known cause remains. A point with no cause found stays in.</p>
+
+  <div class="check" id="m5-q2" data-answer="27.14" data-tolerance="0.02">
+    <p class="check-q">With wafer 24 removed, the other 24 wafers hold 369 defects. What is the new UCL? Give two decimals.</p>
+    <div class="check-explain"><p><span class="m">\bar{c} = 369/24 = 15.375</span> and <span class="m">\sqrt{15.375} = 3.921</span>, so UCL = 15.375 + 3 × 3.921 = 27.14. Wafer 3, with 28 defects, now lies above it. The LCL becomes 15.375 − 11.763 = 3.61.</p></div>
+  </div>
+</section>
+
+<section id="u-chart">
+  <h2>The u chart allows unequal samples</h2>
+  <p>The c chart assumes every sample is the same size. Often they are not. Rolls of coated film come off the line at different lengths, and boards arrive in lots of different sizes. Twelve defects on 60&nbsp;m² of film is a better result than twelve on 20&nbsp;m², so raw counts stop being comparable.</p>
+  <p>The fix is to divide each count by the amount inspected, measured in inspection units. If the inspection unit for film is 1&nbsp;m², a 20&nbsp;m² roll is 20 units. The <strong>u chart</strong> plots defects per unit.</p>
+  <div class="eq">u_i = \frac{c_i}{n_i}, \qquad \bar{u} = \frac{\sum c_i}{\sum n_i}, \qquad UCL_i,\ LCL_i = \bar{u} \pm 3\sqrt{\frac{\bar{u}}{n_i}}</div>
+  <dl class="where">
+    <dt><span class="m">c_i</span></dt><dd>defects found in sample i</dd>
+    <dt><span class="m">n_i</span></dt><dd>size of sample i, in inspection units</dd>
+    <dt><span class="m">\bar{u}</span></dt><dd>total defects divided by total inspection units over the Phase I samples</dd>
+  </dl>
+  <p>The limits follow from the Poisson model. A sample of <span class="m">n_i</span> units has a defect count with mean and variance <span class="m">n_i u</span>. Dividing the count by <span class="m">n_i</span> divides its variance by <span class="m">n_i^2</span>, which leaves <span class="m">u/n_i</span>. A bigger sample averages over more film, so its limits sit closer to the center line. Every sample gets its own pair of limits, and the limit lines on the chart become steps.</p>
+  <p>With <span class="m">\bar{u} = 0.50</span> defects per m², the limits for a few roll sizes are:</p>
+  <div class="table-scroll compact">
+    <table class="ref">
+      <thead><tr><th class="num">Roll area (m²)</th><th class="num">LCL</th><th class="num">UCL</th></tr></thead>
+      <tbody>
+        <tr><td class="num">10</td><td class="num">0 (formula gives −0.17)</td><td class="num">1.17</td></tr>
+        <tr><td class="num">20</td><td class="num">0.03</td><td class="num">0.97</td></tr>
+        <tr><td class="num">40</td><td class="num">0.16</td><td class="num">0.84</td></tr>
+        <tr><td class="num">60</td><td class="num">0.23</td><td class="num">0.77</td></tr>
+        <tr><td class="num">100</td><td class="num">0.29</td><td class="num">0.71</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>A roll with 0.80 defects per m² sits inside its limits at 20 or 40&nbsp;m² and signals at 60&nbsp;m² or more. The same rate carries more evidence when it comes from more film. When every sample has the same size, the u chart is the c chart divided by a constant and gives the same signals.</p>
+  <div class="pitfall">
+    <span class="eyebrow">Common mistake</span>
+    <p>Averaging the <span class="m">u_i</span> to get <span class="m">\bar{u}</span>. A plain average gives a 10&nbsp;m² roll the same weight as a 100&nbsp;m² roll. Pool instead, dividing total defects by total units. The same rule holds for <span class="m">\bar{p}</span> on a p chart with unequal samples.</p>
+  </div>
+
+  <div class="check" id="m5-q3">
+    <p class="check-q">A u chart has <span class="m">\bar{u} = 2.0</span> defects per m². Roll A covers 4&nbsp;m² and roll B covers 16&nbsp;m². Compared with roll A, how far is roll B's UCL from the center line?</p>
+    <ul class="check-options">
+      <li data-why="The width depends on the sample size as well as on ū. More film means less sampling noise in the rate.">The same distance, because ū is the same</li>
+      <li data-correct>Half as far</li>
+      <li data-why="The distance scales with 1/√n, not 1/n. Four times the area gives a factor of √4 = 2.">A quarter as far</li>
+      <li data-why="Larger samples get narrower limits, not wider ones.">Twice as far</li>
+    </ul>
+    <div class="check-explain"><p>The distance is <span class="m">3\sqrt{\bar{u}/n_i}</span>. For roll A it is <span class="m">3\sqrt{2/4} = 2.12</span>, and for roll B it is <span class="m">3\sqrt{2/16} = 1.06</span>, exactly half. Quadrupling the area halves the width.</p></div>
+  </div>
+</section>
+
+<section id="p-chart">
+  <h2>The p and np charts count defective units</h2>
+  <p>When each unit is judged pass or fail, the natural model is the <strong>binomial distribution</strong>. The handbook lists its assumptions: the process is stable, every unit has the same probability p of being defective, and units are independent of one another. In a sample of n units, the number defective D then has mean <span class="m">np</span> and variance <span class="m">np(1-p)</span>. The fraction defective <span class="m">\hat{p} = D/n</span> has mean p and variance <span class="m">p(1-p)/n</span>.</p>
+  <div class="eq">\bar{p} \pm 3\sqrt{\frac{\bar{p}(1-\bar{p})}{n}}, \qquad \bar{p} = \frac{\sum D_i}{\sum n_i}</div>
+  <p>The <strong>np chart</strong> plots the count <span class="m">D_i</span> itself. It needs a constant sample size and has limits <span class="m">n\bar{p} \pm 3\sqrt{n\bar{p}(1-\bar{p})}</span>. Multiply every number on a p chart by n and you have the np chart, with the same points inside and outside the limits. Operators often prefer it because they write down a count and skip the division.</p>
+  <p>The handbook's p chart example tracks misregistration on 30 wafers. On each wafer, 50 chips were measured and the fraction with a misregistration was recorded. The handbook shows the finished chart only as an image, so the numbers here are recomputed from its data. The 30 wafers had 347 misregistered chips out of 1,500, so <span class="m">\bar{p} = 347/1500 = 0.2313</span>. The standard deviation of one wafer's fraction is <span class="m">\sqrt{0.2313 \times 0.7687 / 50} = 0.0596</span>.</p>
+
+  <div class="check" id="m5-q4" data-answer="0.410" data-tolerance="0.002">
+    <p class="check-q">Using <span class="m">\bar{p} = 0.2313</span> and n = 50, what is the p chart's UCL? Give three decimals.</p>
+    <div class="check-explain"><p>UCL = 0.2313 + 3 × 0.0596 = 0.410. The LCL is 0.2313 − 0.1789 = 0.052. In the figure below, wafers 15 (0.44) and 23 (0.48) lie above the UCL.</p></div>
+  </div>
+
+  <figure class="fig" id="fig-p">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Misregistered chips as a p chart and an np chart</h3></div>
+    <div class="controls">
+      <div class="control">
+        <span class="control-label">View</span>
+        <div class="seg" id="p-view">
+          <button data-value="p" aria-pressed="true">p chart, n = 50</button>
+          <button data-value="np">np chart, n = 50</button>
+          <button data-value="pvar">p chart, unequal n</button>
+        </div>
+      </div>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn small" id="p-new" type="button">New sample sizes</button>
+      </div>
+    </div>
+    <div class="fig-chart" id="p-plot"></div>
+    <ul class="legend" id="p-legend"></ul>
+    <div id="p-readouts"></div>
+    <details class="data"><summary>Data table</summary><div class="table-wrap" id="p-table"></div></details>
+    <figcaption>The handbook's misregistration data from section 6.3.3.2. Switching between the first two views changes only the axis, and the same two wafers signal. The third view pretends each wafer had between 20 and 100 chips measured, with counts rescaled to stay close to the handbook's fractions. Hover over wafers 15 and 21 to compare their sample sizes and limits, then press New sample sizes to draw other sizes.</figcaption>
+  </figure>
+
+  <p>With a constant sample size the limits are flat lines. In the third view each wafer gets limits from its own <span class="m">n_i</span> around the pooled <span class="m">\bar{p}</span>, so the limits step in and out like those of a u chart. In the starting draw, wafer 15 shows 0.44 from only 27 chips and stays inside its wide limits. Wafer 21 shows 0.41 from 59 chips and signals. For the smallest samples the LCL formula goes negative, and the chart sets it to zero.</p>
+  <p>Negative lower limits are common on p charts. A p chart has a positive LCL only when <span class="m">n &gt; 9(1-p)/p</span>. At p = 0.01 that means more than 891 units per sample. With smaller samples the chart can flag a rise in defectives and never a fall, so it cannot confirm that an improvement worked.</p>
+</section>
+
+<section id="small-counts">
+  <h2>When three-sigma limits mislead</h2>
+  <p>Three-sigma limits borrow their promise from the normal curve. Each tail beyond a limit should hold 0.135% of in-control points, for a false alarm about once in 370 samples. A Poisson count is only roughly normal. It cannot go below zero, and for small means it piles up near zero with a long tail to the right. The handbook calls the normal approximation adequate once the mean reaches about 5.</p>
+  <p>The lower limit suffers first. Solving <span class="m">c - 3\sqrt{c} &gt; 0</span> shows that the LCL is positive only when c is above 9. The handbook works the case c = 10. The LCL is <span class="m">10 - 3\sqrt{10} = 0.513</span>, so only a count of zero falls below it. The probability of zero defects is <span class="m">e^{-10} = 0.000045</span>, about 1/30 of the 0.00135 the limit was meant to deliver. At the same time the upper tail holds 0.35%, 2.6 times its share.</p>
+
+  <figure class="fig" id="fig-tails">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Exact Poisson tails against three-sigma limits</h3></div>
+    <div class="controls">
+      <label class="control" for="tail-mean">
+        <span class="control-label">Mean defects per sample <output for="tail-mean"></output></span>
+        <input type="range" id="tail-mean" min="1" max="30" step="0.5" value="10">
+      </label>
+      <div class="control">
+        <span class="control-label">Vertical scale</span>
+        <div class="seg" id="tail-scale">
+          <button data-value="lin" aria-pressed="true">Linear</button>
+          <button data-value="log">Log</button>
+        </div>
+      </div>
+    </div>
+    <div class="fig-chart" id="tail-chart"></div>
+    <ul class="legend" id="tail-legend"></ul>
+    <div id="tail-readouts"></div>
+    <figcaption>Bars are exact Poisson probabilities for the count in one sample. The curve is the normal approximation that three-sigma limits rely on, and the dashed lines are those limits. Red bars lie beyond a limit, so each one is a false alarm when the process is in control. Start at the handbook's mean of 10, then slide down to 4 and up to 30. Switch to the log scale to see the tails, and notice how much of the normal curve spills below zero for small means.</figcaption>
+  </figure>
+
+  <p>The two errors pull in opposite directions. The chart raises false alarms on the high side more often than promised and almost never signals on the low side. A drop in defects is good news worth confirming, and this chart will rarely confirm it. For c = 10 the handbook suggests raising the lower limit to 2 or 3. The probability of 1 or fewer defects is 0.0005, and of 2 or fewer is 0.0028, both near the intended 0.00135.</p>
+
+  <div class="check" id="m5-q5">
+    <p class="check-q">A c chart has <span class="m">\bar{c} = 6</span> defects per panel. What does the three-sigma formula give for the lower limit, and what follows?</p>
+    <ul class="check-options">
+      <li data-correct>About −1.35, so the LCL is set to zero and the chart cannot signal a drop in defects</li>
+      <li data-why="A count of zero is not below zero. With the LCL at zero no count can fall beyond it.">Exactly 0, so a panel with zero defects is a signal</li>
+      <li data-why="The standard deviation of a Poisson count is √c̄, not c̄.">6 − 3 × 6 = −12, so the chart needs a new c̄</li>
+      <li data-why="6 − 3√6 is negative. Check the sign.">About 1.35, so a panel with 0 or 1 defects is a signal</li>
+    </ul>
+    <div class="check-explain"><p><span class="m">\sqrt{6} = 2.449</span>, so the formula gives 6 − 7.35 = −1.35. Counts cannot be negative, so the LCL is set to zero and nothing can fall beyond it. The UCL is 6 + 7.35 = 13.35. To detect an improvement at this defect rate, use one of the alternatives in the next section.</p></div>
+  </div>
+</section>
+
+<section id="better-limits">
+  <h2>Better limits for small counts</h2>
+  <p>The handbook offers two remedies. The first changes the data so that normal-theory limits fit. The second keeps the data and takes the limits from the Poisson distribution itself.</p>
+
+  <h3>Variance-stabilizing transformations</h3>
+  <p>The trouble with a Poisson count is that its spread grows with its mean. A square root undoes that. For a Poisson count c, the quantity <span class="m">2\sqrt{c}</span> has a variance close to 1 whatever the mean, and its distribution is closer to symmetric. The handbook lists three versions:</p>
+  <div class="eq">y = 2\sqrt{c}, \qquad y = 2\sqrt{c + 3/8}, \qquad y = \sqrt{c} + \sqrt{c+1}</div>
+  <p>The first is the plain square root. The second is due to Anscombe (1948) and the third to Freeman and Tukey (1950). Both refinements hold the variance nearer to 1 for small means. At a mean of 5, the variance of <span class="m">2\sqrt{c}</span> is 1.14, while the Anscombe and Freeman–Tukey versions both give 1.00. Since the transformed values have a standard deviation of about 1, the limits are simply <span class="m">\bar{y} \pm 3</span>, where <span class="m">\bar{y}</span> is the average of the transformed Phase I counts. The cost is the scale. Nobody on a production floor thinks in units of <span class="m">2\sqrt{c}</span>, so translate the limits back into counts when you label the chart.</p>
+
+  <h3>Probability limits</h3>
+  <p>The second remedy skips the normal curve. Choose the UCL as the smallest count whose upper-tail probability is at most 0.00135, and choose the LCL the same way from below. The chart stays in counts, and neither tail ever holds more than its share. The handbook points to tables by Molina (1973); today a spreadsheet or a few lines of code finds the limits. For the wafers with <span class="m">\bar{c} = 16</span>, probability limits signal at 4 or fewer defects and at 30 or more. Wafer 24 still signals and wafer 3 still does not.</p>
+
+  <figure class="fig" id="fig-limits">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">How often each method raises a false alarm</h3></div>
+    <div class="controls">
+      <div class="control">
+        <span class="control-label">Limits</span>
+        <div class="seg" id="lim-method">
+          <button data-value="sigma" aria-pressed="true">Three-sigma</button>
+          <button data-value="root">2√c</button>
+          <button data-value="anscombe">Anscombe</button>
+          <button data-value="ft">Freeman–Tukey</button>
+          <button data-value="prob">Probability</button>
+        </div>
+      </div>
+    </div>
+    <div class="fig-chart" id="lim-chart"></div>
+    <ul class="legend" id="lim-legend"></ul>
+    <div id="lim-readouts"></div>
+    <figcaption>The actual chance of a false alarm in each tail as the mean count runs from 1 to 30, on a log scale. The horizontal line marks the 0.135% each tail should hold, and the shaded band covers means where the method has no lower limit. Pick a method and compare it with the faint three-sigma lines. The readouts apply each method to the handbook's wafers at <span class="m">\bar{c} = 16</span>; each transformed chart uses the exact mean of the transformed count as its center line.</figcaption>
+  </figure>
+
+  <p>Counts are whole numbers, so no method hits 0.135% exactly. The sawtooth comes from the limits jumping from one whole count to the next as the mean grows. Three-sigma limits run hot in the upper tail, at 1.5 to 3.5 times the target once a lower limit exists, and cold in the lower tail, at under half the target. The transformations shrink that imbalance and reverse it. For means above 5, their upper tail typically holds about 0.6 times its share and their lower tail about 1.6 to 1.9 times, and they give a lower limit from a mean of about 3 to 4.5. Probability limits never exceed the target in either tail, at the price of usually falling short of it.</p>
+
+  <div class="check" id="m5-q6">
+    <p class="check-q">Why might an engineer choose probability limits over the Freeman–Tukey transformation for a c chart?</p>
+    <ul class="check-options">
+      <li data-why="Counts are whole numbers, so an exact 0.135% is rarely possible. Probability limits keep each tail at or below it.">Probability limits put exactly 0.135% in each tail</li>
+      <li data-why="The transformation gives a lower limit from much smaller means, around 4.">The transformation only works when c̄ is above 9</li>
+      <li data-why="Both methods need an estimate of the mean from Phase I data.">Probability limits need no Phase I data</li>
+      <li data-correct>Probability limits keep the chart in the original units of defects</li>
+    </ul>
+    <div class="check-explain"><p>Both methods fix most of the imbalance between the tails. Probability limits keep the chart in counts, so an operator reads defects per wafer directly. A transformed chart needs its limits translated back before most people can use it.</p></div>
+  </div>
+</section>
+
+<section id="summary" class="summary">
+  <h2>Takeaways</h2>
+  <ul>
+    <li>A defect is one flaw. A defective unit has at least one defect and counts once. Chart defects with c or u charts and defective units with p or np charts.</li>
+    <li>The c chart rests on the Poisson model, with limits <span class="m">\bar{c} \pm 3\sqrt{\bar{c}}</span>. The u chart divides each count by the sample size and gives each sample limits <span class="m">\bar{u} \pm 3\sqrt{\bar{u}/n_i}</span>.</li>
+    <li>The p chart rests on the binomial model, with limits <span class="m">\bar{p} \pm 3\sqrt{\bar{p}(1-\bar{p})/n}</span>. The np chart plots the count for a fixed n and gives the same signals.</li>
+    <li>Unequal sample sizes give stepped limits around a pooled center line. A negative LCL is set to zero, and the chart then cannot signal an improvement.</li>
+    <li>For small mean counts, three-sigma limits give too many false alarms above and too few below. Square-root transformations or probability limits restore the balance.</li>
+    <li>Not sure which chart fits your data? Use the <a href="../reference/chooser.html">chart chooser</a>.</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en" class="math-pending">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Multivariate control charts · In Control</title>
+<meta name="description" content="Hotelling's T², principal components and the multivariate EWMA for monitoring several correlated measurements at once.">
+<script>try{var t=localStorage.getItem('in-control:theme');if(t&&t!=='system')document.documentElement.dataset.theme=t}catch(e){}setTimeout(function(){document.documentElement.classList.remove('math-pending')},3000)</script>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="Multivariate control charts · In Control">
+<meta property="og:description" content="Hotelling's T², principal components and the multivariate EWMA for monitoring several correlated measurements at once.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap">
+<link rel="stylesheet" href="../assets/css/course.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script type="module" src="../assets/js/course.js"></script>
+<script type="module" src="../assets/js/modules/10-multivariate.js"></script>
+</head>
+<body data-module="10">
+<div class="shell">
+<nav class="rail" id="rail"></nav>
+<main class="page" id="main">
+
+<header class="module-head">
+  <h1>Multivariate control charts</h1>
+  <p class="lede">A tablet can have an ordinary weight and an ordinary thickness and still be wrong, because heavy tablets should also be thick. When measurements move together, you have to chart them together. This module builds one statistic, Hotelling's T², that watches several correlated measurements at once, then adds two refinements, principal components and the multivariate EWMA.</p>
+</header>
+
+<section id="two-charts">
+  <h2>Two charts are not enough</h2>
+  <p>Most products are measured on more than one characteristic. A tablet press samples tablets for weight and thickness. A machining cell measures a bore's diameter at the top and at the bottom. A wafer gets a thickness and two displacement readings. The handbook notes that most data are naturally multivariate.</p>
+  <p>The obvious approach is a separate Shewhart chart for each measurement. On a tablet press with a 2&nbsp;mg standard deviation in weight and 0.04&nbsp;mm in thickness, that means a weight chart with limits at 250&nbsp;±&nbsp;6&nbsp;mg and a thickness chart with limits at 4.00&nbsp;±&nbsp;0.12&nbsp;mm. A tablet passes when it is inside both sets of limits, so together the two charts accept a rectangle.</p>
+  <p>The trouble is that the two measurements are related. More powder in the die makes a tablet both heavier and thicker, so in-control tablets do not fill the rectangle. They cluster in a tilted ellipse. A tablet that is heavy and thin is unusual for this press, because it suggests the punches squeezed it harder than normal. Yet each of its measurements sits comfortably inside its own limits.</p>
+
+  <figure class="fig" id="fig-ellipse">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Two charts accept a rectangle, the process fills an ellipse</h3></div>
+    <div class="controls">
+      <label class="control" for="ell-rho">
+        <span class="control-label">Correlation between weight and thickness <output for="ell-rho"></output></span>
+        <input type="range" id="ell-rho" min="0" max="0.95" step="0.05" value="0.8">
+      </label>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn ghost" id="ell-reset" type="button">Reset the test tablet</button>
+      </div>
+    </div>
+    <div class="fig-chart" id="ell-chart"></div>
+    <ul class="legend" id="ell-legend"></ul>
+    <div id="ell-readouts"></div>
+    <figcaption>Each blue dot is a tablet from the in-control press. The dashed rectangle is what two separate three-sigma charts accept. The violet ellipse is the T² limit, set so that both methods have the same overall false-alarm rate. Drag the red test tablet, or focus it and use the arrow keys. A heavy, thin tablet stays inside the rectangle and lands far outside the ellipse. Then slide the correlation to zero. The ellipse becomes a circle, and the two methods disagree only in small regions near the edges and corners of the rectangle.</figcaption>
+  </figure>
+
+  <p>The rectangle makes two kinds of mistake. It misses points in the empty corners across the ellipse, like the heavy, thin tablet. It can also flag points near its other two corners that lie along the ellipse and are ordinary for this process. Separate charts also pile up false alarms. Two charts at 0.27% each give an overall rate near 0.5%, and the exact rate depends on a correlation that neither chart shows.</p>
+
+  <div class="key-idea">
+    <span class="eyebrow">Key idea</span>
+    <p>Correlated measurements need one statistic that knows how they vary together. Its limit is an ellipse shaped by the covariance, and it judges each point by its distance from the center in units of the process's own spread.</p>
+  </div>
+
+  <div class="check" id="m10-q1">
+    <p class="check-q">Weight and thickness have correlation 0.8. A tablet weighs 253&nbsp;mg (1.5σ above the mean) and is 3.94&nbsp;mm thick (1.5σ below the mean). What do two separate three-sigma charts and a T² chart say?</p>
+    <ul class="check-options">
+      <li data-why="Each measurement is only 1.5σ from its center, inside its own ±3σ limits. The separate charts see nothing unusual.">Both methods signal, because the tablet is unusual</li>
+      <li data-why="The T² chart judges the pair. A heavy tablet should also be thick, so a heavy, thin one is far outside the ellipse.">Neither signals, because both values are inside ±3σ</li>
+      <li data-correct>The separate charts stay quiet and the T² chart signals</li>
+      <li data-why="1.5σ is well inside the weight chart's ±3σ limits.">Only the weight chart signals</li>
+    </ul>
+    <div class="check-explain"><p>The rectangle checks each coordinate alone, and both are within ±3σ. With correlation 0.8 this tablet has T² = 22.5, about twice the limit of 10.7. Drag the test tablet in the figure to 253&nbsp;mg and 3.94&nbsp;mm to see it.</p></div>
+  </div>
+</section>
+
+<section id="t-squared">
+  <h2>Hotelling's T²</h2>
+  <p>To build that statistic, first summarize the process with two objects, as the handbook's tutorial does (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section5/pmc541.htm" target="_blank" rel="noopener">section 6.5.4.1</a>). The <strong>mean vector</strong> holds the average of each variable. The <strong>covariance matrix</strong> holds every variance and covariance.</p>
+  <p>The handbook's example measures the length, width and height of five objects. The averages are 4.10, 2.08 and 0.604, and the covariance matrix is</p>
+  <div class="eq">\bar{\mathbf{x}} = \begin{bmatrix} 4.10 \\ 2.08 \\ 0.604 \end{bmatrix}, \qquad \mathbf{S} = \begin{bmatrix} 0.025 &amp; 0.0075 &amp; 0.00175 \\ 0.0075 &amp; 0.0070 &amp; 0.00135 \\ 0.00175 &amp; 0.00135 &amp; 0.00043 \end{bmatrix}</div>
+  <p>The diagonal holds the three variances, so 0.025 is the variance of length. Each off-diagonal entry is a covariance, the average product of two variables' deviations from their means:</p>
+  <div class="eq">s_{jk} = \frac{1}{n-1}\sum_{i=1}^{n} (x_{ij}-\bar{x}_j)(x_{ik}-\bar{x}_k)</div>
+  <p>The matrix is symmetric, because the covariance of length with width is the covariance of width with length. Dividing a covariance by both standard deviations gives the familiar correlation, <span class="m">r_{jk} = s_{jk}/(s_j s_k)</span>.</p>
+
+  <div class="check" id="m10-q2" data-answer="0.567" data-tolerance="0.01">
+    <p class="check-q">Use the handbook's covariance matrix above. What is the correlation between length and width? Give two decimals.</p>
+    <div class="check-explain"><p>The covariance of length and width is 0.0075, and their variances are 0.025 and 0.0070. So <span class="m">r = 0.0075/\sqrt{0.025 \times 0.0070} = 0.0075/0.01323 = 0.57</span>. Longer objects in this sample tend to be wider too.</p></div>
+  </div>
+
+  <p>In 1947 Harold Hotelling proposed a statistic that measures how far a sample mean lies from a reference mean in units that respect this covariance. It generalizes Student's t. For one variable, the squared t statistic can be written as</p>
+  <div class="eq">t^2 = \frac{(\bar{x}-\mu_0)^2}{s^2/n} = n\,(\bar{x}-\mu_0)\,(s^2)^{-1}(\bar{x}-\mu_0)</div>
+  <p>Replace each number with its vector or matrix counterpart and you have Hotelling's statistic for <span class="m">p</span> variables (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section5/pmc543.htm" target="_blank" rel="noopener">handbook 6.5.4.3</a>):</p>
+  <div class="eq">T^2 = n\,(\bar{\mathbf{x}}-\boldsymbol{\mu})'\,\mathbf{S}^{-1}(\bar{\mathbf{x}}-\boldsymbol{\mu})</div>
+  <dl class="where">
+    <dt><span class="m">n</span></dt><dd>number of items in each subgroup</dd>
+    <dt><span class="m">\bar{\mathbf{x}}-\boldsymbol{\mu}</span></dt><dd>vector of differences between the subgroup averages and the reference means</dd>
+    <dt><span class="m">\mathbf{S}^{-1}</span></dt><dd>inverse of the covariance matrix</dd>
+    <dt><span class="m">{}'</span></dt><dd>transpose, which writes the column vector as a row</dd>
+  </dl>
+  <p>With two variables the inverse is short enough to write out:</p>
+  <div class="eq">\mathbf{S} = \begin{bmatrix} s_1^2 &amp; s_{12} \\ s_{12} &amp; s_2^2 \end{bmatrix}, \qquad \mathbf{S}^{-1} = \frac{1}{s_1^2 s_2^2 - s_{12}^2}\begin{bmatrix} s_2^2 &amp; -s_{12} \\ -s_{12} &amp; s_1^2 \end{bmatrix}</div>
+  <p>Multiply it out for a single item (<span class="m">n = 1</span>) with standardized deviations <span class="m">z_1</span> and <span class="m">z_2</span> and correlation <span class="m">\rho</span>, and you get a formula you can work by hand:</p>
+  <div class="eq">T^2 = \frac{z_1^2 - 2\rho\, z_1 z_2 + z_2^2}{1-\rho^2}</div>
+  <p>When the variables are uncorrelated, <span class="m">\rho = 0</span> and T² is the sum of the squared z-scores, as the handbook notes. With positive correlation, the middle term discounts deviations that share a sign and adds to deviations with opposite signs. The tablet that is 1.5σ heavy and 1.5σ thin has <span class="m">T^2 = (2.25 + 3.6 + 2.25)/0.36 = 22.5</span>. All points with the same T² lie on one ellipse, which is the curve in the first figure.</p>
+
+  <div class="check" id="m10-q3" data-answer="5" data-tolerance="0.05">
+    <p class="check-q">Weight and thickness have correlation 0.8. A tablet is 2.0σ heavier than average and 1.0σ thicker. Compute its T².</p>
+    <div class="check-explain"><p><span class="m">T^2 = (2.0^2 - 2 \times 0.8 \times 2.0 \times 1.0 + 1.0^2)/(1 - 0.8^2) = (4 - 3.2 + 1)/0.36 = 5.0</span>. That is well under the limit of about 10.7. A heavy tablet is expected to be thick, so this one is ordinary even though its weight alone sits 2σ from the mean.</p></div>
+  </div>
+</section>
+
+<section id="limits">
+  <h2>Control limits in two phases</h2>
+  <p>A T² chart plots one value per subgroup and compares it with an upper control limit. The handbook does not use three-sigma limits for T². It derives each limit from the distribution of T², which depends on whether the mean and covariance are known or estimated, and on whether the subgroup being judged helped estimate them.</p>
+  <p>When the mean vector and covariance matrix are known exactly, T² follows a chi-square distribution with <span class="m">p</span> degrees of freedom. The first figure used that case. In practice both are estimated from data and the F distribution takes over. For one sample tested against a fixed mean <span class="m">\boldsymbol{\mu}_0</span>, the handbook gives</p>
+  <div class="eq">T^2 \sim \frac{p(n-1)}{n-p}\,F_{p,\;n-p}</div>
+
+  <h3>Phase I limits</h3>
+  <p>Take <span class="m">k</span> subgroups of <span class="m">n</span> items. Estimate the mean vector by the grand average <span class="m">\bar{\bar{\mathbf{x}}}</span>, and the covariance matrix <span class="m">\mathbf{S}_p</span> by averaging the <span class="m">k</span> subgroup covariance matrices. Subgroup <span class="m">j</span> then gets <span class="m">T_j^2 = n(\bar{\mathbf{x}}^{(j)}-\bar{\bar{\mathbf{x}}})'\,\mathbf{S}_p^{-1}(\bar{\mathbf{x}}^{(j)}-\bar{\bar{\mathbf{x}}})</span>, compared with this limit from <a href="https://www.itl.nist.gov/div898/handbook/pmc/section5/pmc5431.htm" target="_blank" rel="noopener">handbook 6.5.4.3.1</a>:</p>
+  <div class="eq">\text{UCL}_{\text{I}} = \frac{knp - kp - np + p}{kn - k - p + 1}\;F_{\alpha;\;p,\;kn-k-p+1}</div>
+  <p>Here <span class="m">F_{\alpha}</span> is the upper <span class="m">\alpha</span> point of the F distribution. As with any Phase I chart, investigate points above the limit, remove only those whose cause you have found and corrected, and recompute.</p>
+
+  <h3>Phase II limits</h3>
+  <p>Once the baseline is clean, freeze its estimates and judge each new subgroup against a different limit (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section5/pmc5432.htm" target="_blank" rel="noopener">handbook 6.5.4.3.2</a>). If <span class="m">a</span> of the original subgroups were removed,</p>
+  <div class="eq">\text{UCL}_{\text{II}} = \frac{p(k-a+1)(n-1)}{(k-a)n - k + a - p + 1}\;F_{\alpha;\;p,\;(k-a)n-k+a-p+1}</div>
+  <p>The Phase II limit is higher. A future subgroup played no part in the estimates, so its T² carries their full estimation error on top of its own variation. For <span class="m">k = 25</span> subgroups of <span class="m">n = 4</span> tablets, <span class="m">p = 2</span> and <span class="m">\alpha = 0.0027</span>, both formulas use <span class="m">F = 6.41</span> with 2 and 74 degrees of freedom. The limits come out at 12.48 for Phase I and 13.52 for Phase II.</p>
+
+  <h3>Individual observations</h3>
+  <p>With one item per sample there is no within-subgroup covariance to pool. The handbook (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section5/pmc5433.htm" target="_blank" rel="noopener">6.5.4.3.3</a>) estimates the mean and covariance from all <span class="m">m</span> historical observations and uses limits from the beta distribution, due to Tracy, Young and Mason (1992):</p>
+  <div class="eq">\text{LCL} = \frac{(m-1)^2}{m}\,B_{1-\alpha/2;\;p/2,\;(m-p-1)/2}, \qquad \text{UCL} = \frac{(m-1)^2}{m}\,B_{\alpha/2;\;p/2,\;(m-p-1)/2}</div>
+  <p>where <span class="m">B_{\alpha/2}</span> is the upper <span class="m">\alpha/2</span> point of the beta distribution. For <span class="m">m = 50</span> observations on two variables with <span class="m">\alpha = 0.0027</span>, the limits are 0.0028 and 11.77. This chart has a lower limit as well. A T² near zero means every variable sits almost exactly at its mean, and the handbook suggests that can point to a problem with how the data were recorded.</p>
+
+  <figure class="fig" id="fig-tsq">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">A shift that only the T² chart sees</h3></div>
+    <div class="controls">
+      <div class="control-row">
+        <label class="check-inline"><input type="checkbox" id="tsq-shift" checked> Tablets get heavier and thinner from subgroup 36</label>
+        <button class="btn small" id="tsq-new" type="button">New sample</button>
+      </div>
+    </div>
+    <div class="fig-split even">
+      <div class="fig-chart" id="tsq-w"></div>
+      <div class="fig-chart" id="tsq-t"></div>
+    </div>
+    <div class="fig-chart" id="tsq-chart"></div>
+    <ul class="legend" id="tsq-legend"></ul>
+    <div id="tsq-readouts"></div>
+    <figcaption>The top charts are ordinary X̄ charts for weight and thickness, with three-sigma limits from the first 25 subgroups of four tablets. The bottom chart combines both measurements into T², with the Phase I limit over the shaded baseline and the Phase II limit after it. From subgroup 36 the press makes tablets 1.2&nbsp;mg heavier and 0.024&nbsp;mm thinner, a shift of 0.6σ in each measurement. Neither X̄ chart reacts, and the T² chart flags most of the shifted subgroups. Turn the shift off and draw a few new samples to see how rarely either kind of chart raises a false alarm.</figcaption>
+  </figure>
+</section>
+
+<section id="signals">
+  <h2>Reading a T² signal</h2>
+  <p>A T² chart condenses everything into one number per subgroup, and that convenience has a price. The handbook (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc342.htm" target="_blank" rel="noopener">6.3.4.2</a>) names two costs. The scale of T² has nothing to do with the scale of any measured variable, so a value of 18 has no units and no direction. And when T² crosses its limit, the chart does not say which variable, or which relationship between variables, caused it.</p>
+  <p>The handbook's advice is to run the univariate charts alongside the multivariate one. They keep the physical units in view and help narrow down the culprit. They cannot reveal a change in the correlation itself, so a chart of dispersion belongs in the set as well. For subgrouped data the handbook pairs the T² chart for means with a <span class="m">T_d^2</span> chart for within-subgroup dispersion, just as an X̄ chart is paired with an R or s chart.</p>
+  <p>In the tablet example, the X̄ charts show weight creeping up and thickness creeping down by small amounts. Neither movement is alarming on its own. Read next to the T² signal, they point the engineer toward whatever controls compression, such as punch wear or press force.</p>
+
+  <div class="pitfall">
+    <span class="eyebrow">Common mistake</span>
+    <p>Treating a quiet T² chart as proof that every variable is fine. T² is least sensitive along the long axis of the ellipse, where the process naturally varies most. A shift that moves weight and thickness up together can stay inside the ellipse while the X̄ charts catch it. Keep both kinds of chart.</p>
+  </div>
+
+  <div class="check" id="m10-q4">
+    <p class="check-q">The T² chart for a three-variable process signals at subgroup 31. What does that signal tell you on its own?</p>
+    <ul class="check-options">
+      <li data-why="T² is one number that combines all the variables. It carries no information about which one moved.">Which variable moved, because T² grows fastest for the variable with the biggest change</li>
+      <li data-why="T² has no units. The handbook stresses that its scale is unrelated to the scales of the variables.">How far the mean moved, in the units of measurement</li>
+      <li data-why="The T² chart for means is built to respond to where the subgroup average sits. Changes in spread are the job of a dispersion chart such as the T²_d chart.">That the spread within subgroups increased</li>
+      <li data-correct>That the subgroup's averages, taken together, are unusually far from the baseline given the usual variances and correlations</li>
+    </ul>
+    <div class="check-explain"><p>A signal says the subgroup is unusual as a whole. To find out why, look at the univariate charts and a dispersion chart, as the handbook recommends.</p></div>
+  </div>
+</section>
+
+<section id="principal-components">
+  <h2>Principal components</h2>
+  <p>Principal components offer another way to handle correlated variables (handbook <a href="https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc342.htm" target="_blank" rel="noopener">6.3.4.2</a> and <a href="https://www.itl.nist.gov/div898/handbook/pmc/section5/pmc55.htm" target="_blank" rel="noopener">6.5.5</a>). The idea is to rotate the standardized variables into new variables that are uncorrelated and ordered by how much variance they carry. Each principal component is a weighted sum of the standardized originals. The weights come from an eigenvector of the correlation matrix, and the component's variance is the matching eigenvalue.</p>
+  <p>Two standardized variables with positive correlation <span class="m">r</span> make the geometry plain. Whatever the value of <span class="m">r</span>, the components point along the diagonals:</p>
+  <div class="eq">\text{PC}_1 = \frac{z_1 + z_2}{\sqrt{2}} \;\text{ with variance } 1 + r, \qquad \text{PC}_2 = \frac{z_1 - z_2}{\sqrt{2}} \;\text{ with variance } 1 - r</div>
+  <p>For tablets, PC1 measures overall size, so heavy, thick tablets score high on it. PC2 measures the contrast between weight and thickness, so a heavy, thin tablet scores high on PC2. When <span class="m">r = 0.8</span>, PC1 carries 90% of the variance and PC2 only 10%.</p>
+  <p>Control charts use <strong>principal factors</strong>. A principal factor is a component divided by the square root of its eigenvalue, so every factor has variance 1 and can be charted with limits at ±3. The handbook lists two advantages. The factors are uncorrelated, and often a few of them capture most of the variation, so you chart fewer series than you have variables. The disadvantage is that the original variables lose their identity, although the leading components sometimes keep a clear meaning, as size and contrast do here.</p>
+
+  <figure class="fig" id="fig-pca">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Principal components of weight and thickness</h3></div>
+    <div class="controls">
+      <label class="control" for="pca-rho">
+        <span class="control-label">Correlation <output for="pca-rho"></output></span>
+        <input type="range" id="pca-rho" min="0" max="0.95" step="0.05" value="0.8">
+      </label>
+      <div class="control">
+        <span class="control-label">New tablets shift</span>
+        <div class="seg" id="pca-shift">
+          <button data-value="none">Not at all</button>
+          <button data-value="pc1">Along PC1</button>
+          <button data-value="pc2" aria-pressed="true">Along PC2</button>
+        </div>
+      </div>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn small" id="pca-new" type="button">New sample</button>
+      </div>
+    </div>
+    <div class="fig-split">
+      <div class="fig-chart" id="pca-scatter"></div>
+      <div class="fig-chart" id="pca-bars"></div>
+    </div>
+    <div class="fig-chart" id="pca-scores"></div>
+    <ul class="legend" id="pca-legend"></ul>
+    <div id="pca-readouts"></div>
+    <figcaption>The scatter shows 40 baseline tablets in grey and 20 new tablets in blue, standardized with the baseline mean and spread. The solid black line is the PC1 axis and the dashed line is the PC2 axis. The bars give each component's share of the variance, and the bottom chart plots both principal factors in time order. The new tablets have moved 1.5 standardized units along PC2, which makes them heavier and thinner. The PC2 factor jumps outside its limits while PC1 barely moves. Switch the shift to PC1. The same distance now produces few or no signals, because PC1 already varies a lot. Raise the correlation to 0.95 and watch PC2's share shrink and its chart grow more sensitive.</figcaption>
+  </figure>
+
+  <p>The handbook works a three-variable example (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section5/pmc552.htm" target="_blank" rel="noopener">6.5.5.2</a>) with ten wafers, each measured for thickness, horizontal displacement and vertical displacement. The eigenvalues of their correlation matrix are below. They add up to 3, the number of variables, and their product, 0.499, equals the determinant of the correlation matrix.</p>
+  <div class="table-scroll">
+    <table class="ref">
+      <thead><tr><th>Component</th><th class="num">Eigenvalue</th><th class="num">Share of variance</th><th class="num">Cumulative share</th></tr></thead>
+      <tbody>
+        <tr><td>PC1</td><td class="num">1.769</td><td class="num">59.0%</td><td class="num">59.0%</td></tr>
+        <tr><td>PC2</td><td class="num">0.927</td><td class="num">30.9%</td><td class="num">89.9%</td></tr>
+        <tr><td>PC3</td><td class="num">0.304</td><td class="num">10.1%</td><td class="num">100%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Two components carry about 90% of the variation, so charts of two factors watch nearly everything that three separate charts would. Kaiser's rule of thumb, which the handbook mentions, keeps only components with eigenvalues above 1. Here it would keep just the first.</p>
+
+  <div class="check" id="m10-q5" data-answer="59" data-tolerance="0.2" data-unit="%">
+    <p class="check-q">In the handbook's wafer example, what percentage of the total variance does the first principal component explain? Its eigenvalue is 1.769.</p>
+    <div class="check-explain"><p>Each standardized variable has variance 1, so three variables have total variance 3, which is also the sum of the eigenvalues. The first component explains <span class="m">1.769/3 = 0.590</span>, or 59.0%.</p></div>
+  </div>
+</section>
+
+<section id="mewma">
+  <h2>Multivariate EWMA</h2>
+  <p>A T² chart judges each subgroup on its own, so like a Shewhart chart it is slow to notice a small shift that persists. <a href="07-ewma.html">Module 7</a> solved that problem for one variable with the exponentially weighted moving average. The multivariate EWMA, or MEWMA, applies the same smoothing to the whole vector of measurements (<a href="https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc343.htm" target="_blank" rel="noopener">handbook 6.3.4.3</a>):</p>
+  <div class="eq">\mathbf{Z}_i = \boldsymbol{\Lambda}\mathbf{X}_i + (\mathbf{I} - \boldsymbol{\Lambda})\,\mathbf{Z}_{i-1}</div>
+  <dl class="where">
+    <dt><span class="m">\mathbf{X}_i</span></dt><dd>the <span class="m">i</span>-th observation vector, measured from the in-control mean</dd>
+    <dt><span class="m">\boldsymbol{\Lambda}</span></dt><dd>a diagonal matrix of smoothing constants <span class="m">\lambda_1, \ldots, \lambda_p</span>, each between 0 and 1</dd>
+    <dt><span class="m">\mathbf{Z}_0</span></dt><dd>the starting vector, the in-control mean (zero once the mean is subtracted)</dd>
+  </dl>
+  <p>The chart plots a T² statistic computed on <span class="m">\mathbf{Z}_i</span> instead of <span class="m">\mathbf{X}_i</span>, using the covariance matrix of <span class="m">\mathbf{Z}_i</span>. When every variable gets the same <span class="m">\lambda</span>, Lowry and co-authors (1992) showed that this covariance is a scaled copy of the data's covariance matrix <span class="m">\boldsymbol{\Sigma}</span>:</p>
+  <div class="eq">T_i^2 = \mathbf{Z}_i'\,\boldsymbol{\Sigma}_{Z_i}^{-1}\mathbf{Z}_i, \qquad \boldsymbol{\Sigma}_{Z_i} = \frac{\lambda}{2-\lambda}\left[1-(1-\lambda)^{2i}\right]\boldsymbol{\Sigma}</div>
+  <p>As <span class="m">i</span> grows, the bracket approaches 1 and the covariance settles at <span class="m">\tfrac{\lambda}{2-\lambda}\boldsymbol{\Sigma}</span>. The handbook points out that software can use the exact form from the first point, which avoids small errors early in the chart.</p>
+  <p>The handbook illustrates the chart with ten bivariate observations from Lowry and co-authors, simulated with unit variances and correlation 0.5, and <span class="m">\lambda = 0.1</span>. The table repeats that calculation, with <span class="m">\boldsymbol{\Sigma}</span> estimated from the same ten observations and <span class="m">\mathbf{Z}_0 = \mathbf{0}</span>. Every T² value matches the handbook's output.</p>
+  <div class="table-scroll">
+    <table class="ref">
+      <thead><tr><th class="num">i</th><th class="num">X₁</th><th class="num">X₂</th><th class="num">Z₁</th><th class="num">Z₂</th><th class="num">MEWMA T²</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td class="num">−1.19</td><td class="num">0.59</td><td class="num">−0.119</td><td class="num">0.059</td><td class="num">2.1886</td></tr>
+        <tr><td class="num">2</td><td class="num">0.12</td><td class="num">0.90</td><td class="num">−0.095</td><td class="num">0.143</td><td class="num">2.0697</td></tr>
+        <tr><td class="num">3</td><td class="num">−1.69</td><td class="num">0.40</td><td class="num">−0.255</td><td class="num">0.169</td><td class="num">4.8365</td></tr>
+        <tr><td class="num">4</td><td class="num">0.30</td><td class="num">0.46</td><td class="num">−0.199</td><td class="num">0.198</td><td class="num">3.4158</td></tr>
+        <tr><td class="num">5</td><td class="num">0.89</td><td class="num">−0.75</td><td class="num">−0.090</td><td class="num">0.103</td><td class="num">0.7089</td></tr>
+        <tr><td class="num">6</td><td class="num">0.82</td><td class="num">0.98</td><td class="num">0.001</td><td class="num">0.191</td><td class="num">0.9268</td></tr>
+        <tr><td class="num">7</td><td class="num">−0.30</td><td class="num">2.28</td><td class="num">−0.029</td><td class="num">0.400</td><td class="num">4.0018</td></tr>
+        <tr><td class="num">8</td><td class="num">0.63</td><td class="num">1.75</td><td class="num">0.037</td><td class="num">0.535</td><td class="num">6.1657</td></tr>
+        <tr><td class="num">9</td><td class="num">1.56</td><td class="num">1.58</td><td class="num">0.189</td><td class="num">0.639</td><td class="num">7.8554</td></tr>
+        <tr><td class="num">10</td><td class="num">1.46</td><td class="num">3.05</td><td class="num">0.316</td><td class="num">0.880</td><td class="num">14.4158</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The second variable runs high from observation 7 on. Each of those observations pushes <span class="m">\mathbf{Z}</span> further from zero, and the statistic climbs from 4.0 to 14.4 over the last four points.</p>
+  <p>Choose <span class="m">\lambda</span> as in the univariate case, with small values for small shifts. The upper limit, usually written <span class="m">h</span>, is set for a target in-control average run length, and Lowry and co-authors published tables of it. The limits in the next figure were found by simulation for this course, for two variables and an in-control ARL of 200. They rise from 7.70 at <span class="m">\lambda = 0.05</span> and 8.79 at <span class="m">\lambda = 0.1</span> to 10.60 at <span class="m">\lambda = 1</span>.</p>
+
+  <figure class="fig" id="fig-mewma">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">MEWMA and T² after a small shift</h3></div>
+    <div class="controls">
+      <label class="control" for="mew-lambda">
+        <span class="control-label">Smoothing constant λ <output for="mew-lambda"></output></span>
+        <input type="range" id="mew-lambda" min="0.05" max="1" step="0.05" value="0.1">
+      </label>
+      <div class="control">
+        <span class="control-label">Size of the shift (statistical distance)</span>
+        <div class="seg" id="mew-shift">
+          <button data-value="0.5">0.5</button>
+          <button data-value="1" aria-pressed="true">1</button>
+          <button data-value="2">2</button>
+        </div>
+      </div>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn small" id="mew-new" type="button">New sample</button>
+      </div>
+    </div>
+    <div class="fig-chart" id="mew-t2"></div>
+    <div class="fig-chart" id="mew-chart"></div>
+    <ul class="legend" id="mew-legend"></ul>
+    <div id="mew-readouts"></div>
+    <figcaption>Both charts watch the same stream of bivariate observations with a known in-control mean and covariance, and both have limits set for an in-control ARL of 200. From observation 41 the mean moves by a statistical distance of 1, which means the shifted mean itself would have T² = 1. With λ = 0.1 the MEWMA needs about 8 observations on average to signal, and the T² chart needs about 42. Raise λ toward 1 and the MEWMA forgets the past until it becomes the T² chart. Try a shift of 2 to see the advantage shrink.</figcaption>
+  </figure>
+
+  <div class="check" id="m10-q6">
+    <p class="check-q">What chart do you get if you set λ = 1 in the MEWMA?</p>
+    <ul class="check-options">
+      <li data-why="Weighting all past observations equally is closer to a very small λ, which remembers far into the past. λ = 1 remembers nothing.">A chart of the average of all observations so far</li>
+      <li data-why="The MEWMA always combines the variables through the covariance matrix. λ only sets how much of the past it remembers.">A separate EWMA chart for each variable</li>
+      <li data-correct>The T² chart for individual observations</li>
+      <li data-why="Principal components rotate the variables. λ has nothing to do with that.">A principal factor chart</li>
+    </ul>
+    <div class="check-explain"><p>With <span class="m">\lambda = 1</span>, <span class="m">\mathbf{Z}_i = \mathbf{X}_i</span> and <span class="m">\boldsymbol{\Sigma}_{Z_i} = \boldsymbol{\Sigma}</span>, so the statistic is <span class="m">\mathbf{X}_i'\boldsymbol{\Sigma}^{-1}\mathbf{X}_i</span>, the T² of the current observation alone. Slide λ to 1 in the figure and the two charts become identical.</p></div>
+  </div>
+</section>
+
+<section id="summary" class="summary">
+  <h2>Takeaways</h2>
+  <ul>
+    <li>Separate charts for correlated measurements accept a rectangle, but the in-control process fills an ellipse. Points that break the correlation slip through.</li>
+    <li>Hotelling's T² measures the distance of a subgroup mean from the baseline in units of the process's own variances and correlations. It is the multivariate version of Student's t.</li>
+    <li>T² limits come from the F and beta distributions, and they differ between Phase I (the baseline) and Phase II (new data).</li>
+    <li>A T² signal says that something changed without saying what. Run univariate charts and a dispersion chart alongside it.</li>
+    <li>Principal components turn correlated variables into uncorrelated factors, often fewer than the original variables, at the cost of their original meaning.</li>
+    <li>The MEWMA smooths the observation vectors before computing T², which makes it much faster at catching small, persistent shifts.</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>

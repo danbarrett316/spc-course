@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en" class="math-pending">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Variation and control · In Control</title>
+<meta name="description" content="Common causes, special causes, tampering, and what it means for a process to be in statistical control.">
+<script>try{var t=localStorage.getItem('in-control:theme');if(t&&t!=='system')document.documentElement.dataset.theme=t}catch(e){}setTimeout(function(){document.documentElement.classList.remove('math-pending')},3000)</script>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="Variation and control · In Control">
+<meta property="og:description" content="Common causes, special causes, tampering, and what it means for a process to be in statistical control.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap">
+<link rel="stylesheet" href="../assets/css/course.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script type="module" src="../assets/js/course.js"></script>
+<script type="module" src="../assets/js/modules/01-variation.js"></script>
+</head>
+<body data-module="1">
+<div class="shell">
+<nav class="rail" id="rail"></nav>
+<main class="page" id="main">
+
+<header class="module-head">
+  <h1>Variation and control</h1>
+  <p class="lede">No two bottles from a filling line hold exactly the same amount. Statistical process control starts by separating the variation that is built into a process from the variation that tells you something has changed.</p>
+</header>
+
+<section id="every-process-varies">
+  <h2>Every process varies</h2>
+  <p>Measure anything a process makes closely enough and the numbers disagree. Fill volumes, shaft diameters, invoice processing times, the width of a line etched on a silicon wafer: each one scatters around a typical value. That scatter is not a malfunction. It is what the process does.</p>
+  <p>The useful question is narrower: <strong>is the scatter stable?</strong> A stable process is like a fair die. You cannot predict the next roll, but you can say with confidence what the next hundred rolls will look like. An unstable process is a die that someone keeps swapping out while you are not looking.</p>
+
+  <figure class="fig" id="fig-line">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">One filling line, two ways of looking at it</h3></div>
+    <div class="fig-split">
+      <div class="fig-chart" id="line-run"></div>
+      <div class="fig-chart" id="line-hist"></div>
+    </div>
+    <div class="controls">
+      <div class="control">
+        <span class="control-label">Introduce a change</span>
+        <div class="seg" id="line-change">
+          <button data-value="none" aria-pressed="true">None</button>
+          <button data-value="shift">Shift</button>
+          <button data-value="drift">Drift</button>
+          <button data-value="spread">More spread</button>
+          <button data-value="spike">Spike</button>
+        </div>
+      </div>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn primary" id="line-run-btn" type="button">Run the line</button>
+        <button class="btn" id="line-step" type="button">Fill 10 more</button>
+        <button class="btn ghost" id="line-reset" type="button">Reset</button>
+      </div>
+    </div>
+    <div id="line-readouts"></div>
+    <figcaption>Left: each bottle in the order it was filled, with the 500&nbsp;mL target. Right: the same bottles stacked into a histogram, with the bell curve this line produces when nothing has changed. Introduce a change, run the line, and compare the two views. A drift that is obvious over time can hide inside a histogram.</figcaption>
+  </figure>
+
+  <p>The histogram answers <em>what values do we get?</em> The time-ordered plot answers <em>are we still getting the same thing?</em> Every control chart in this course is built on the second view. Time order is the evidence.</p>
+</section>
+
+<section id="two-kinds">
+  <h2>Common causes and special causes</h2>
+  <p>Walter Shewhart, a physicist at Bell Telephone Laboratories, gave this idea its working vocabulary in the 1920s. He split variation into two kinds that call for completely different responses.</p>
+  <div class="def-grid">
+    <div class="def">
+      <h3><span class="dot"></span>Common causes</h3>
+      <span class="aka">Shewhart called them chance causes</span>
+      <p>Many small influences that are always present: room temperature, small differences between lots of raw material, operator technique, measurement noise. Each contributes a little, and together they produce steady, random-looking scatter. They belong to the system, so only a change to the system reduces them.</p>
+    </div>
+    <div class="def">
+      <h3><span class="dot signal"></span>Special causes</h3>
+      <span class="aka">Shewhart called them assignable causes</span>
+      <p>Something specific that is not part of the usual process: a worn tool, a new supplier lot, a mis-set dial, a power dip. Special causes show up as shifts, trends, spikes and other patterns. The people running the process can usually find and remove them.</p>
+    </div>
+  </div>
+  <div class="key-idea">
+    <span class="eyebrow">Key idea</span>
+    <p>A process whose variation comes only from common causes is <strong>in statistical control</strong>. Its future output is predictable within limits. SPC is the discipline of catching special causes quickly without reacting to common-cause noise.</p>
+  </div>
+
+  <div class="check" id="m1-q1">
+    <p class="check-q">A filling line's volumes vary by about ±3&nbsp;mL from bottle to bottle because of small fluctuations in line pressure, foam and valve timing. Nothing about the line has changed in months. This variation is best described as:</p>
+    <ul class="check-options">
+      <li data-why="Nothing specific or new is acting on the line. These are the everyday influences built into how it runs.">Special-cause variation</li>
+      <li data-correct>Common-cause variation</li>
+      <li data-why="Measurement noise is one common cause among several here, not the whole story.">Measurement error only</li>
+    </ul>
+    <div class="check-explain"><p>Many small, ever-present influences that together produce steady scatter are common causes. Reducing them means changing the system: better valves, tighter pressure regulation, a different nozzle design.</p></div>
+  </div>
+
+  <div class="check" id="m1-q2">
+    <p class="check-q">On Tuesday morning a new lot of caps arrives, and for two hours the fills run about 2&nbsp;mL heavier than usual. What kind of cause is this?</p>
+    <ul class="check-options">
+      <li data-why="A sustained shift tied to a specific event is exactly what a special cause looks like.">Common cause, because fills always vary</li>
+      <li data-correct>Special cause, because something specific changed</li>
+      <li data-why="Common causes do not switch on with a delivery and then persist at a new level.">It cannot be either until the process is out of specification</li>
+    </ul>
+    <div class="check-explain"><p>A shift that starts with an identifiable event (a new lot) is a special, or assignable, cause. Whether or not the heavier bottles are still within specification, the process has changed and someone should find out why.</p></div>
+  </div>
+</section>
+
+<section id="tampering">
+  <h2>The cost of reacting to noise</h2>
+  <p>If common-cause noise is part of the system, what happens when someone treats it like a signal? Suppose an operator weighs every bottle and turns the fill dial by exactly the amount the last bottle missed target. It sounds diligent. W. Edwards Deming called it <strong>tampering</strong>, and it makes the process worse.</p>
+  <p>The reason is simple. The last bottle's error was mostly random, so it says nothing about the next bottle. Correcting for it adds a second random disturbance on top of the first. If the noise has standard deviation <span class="m">\sigma</span>, the adjusted process has standard deviation <span class="m">\sqrt{2}\,\sigma</span>, about 41% more spread.</p>
+
+  <figure class="fig" id="fig-tamper">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Three ways to run the same line</h3></div>
+    <div class="controls">
+      <div class="control">
+        <span class="control-label">Adjustment rule</span>
+        <div class="seg" id="tamper-rule">
+          <button data-value="alone">Leave it alone</button>
+          <button data-value="every" aria-pressed="true">Adjust after every bottle</button>
+          <button data-value="signal">Adjust only on a signal</button>
+        </div>
+      </div>
+      <div class="control-row">
+        <label class="check-inline"><input type="checkbox" id="tamper-shift" checked> A real shift happens at bottle 60</label>
+        <button class="btn small" id="tamper-new" type="button">New run</button>
+      </div>
+    </div>
+    <div class="fig-chart" id="tamper-chart"></div>
+    <ul class="legend" id="tamper-legend"></ul>
+    <div id="tamper-readouts"></div>
+    <figcaption>All three rules face exactly the same random noise. The faint line is the left-alone process; the blue line follows the rule you pick. Here a signal is one bottle beyond 3σ, or two of the last three beyond 2σ on the same side, and the response is to correct by the average error of the last three bottles. The readouts give each rule's typical distance from target (root mean square error). Turn the real shift off and on: adjusting after every bottle overreacts to noise, leaving the line alone ignores a real problem, and adjusting only on a signal handles both.</figcaption>
+  </figure>
+
+  <p>The third rule is a control chart in miniature: leave the process alone while it behaves like itself, and act when the data give strong evidence that something changed. The rest of this course is about building that rule well.</p>
+
+  <div class="check" id="m1-q3">
+    <p class="check-q">A stable filling line has a bottle-to-bottle standard deviation of 1.0&nbsp;mL. An operator starts adjusting the dial after every bottle by the amount it missed target. Roughly what standard deviation should you now expect?</p>
+    <ul class="check-options">
+      <li data-why="Adjusting cannot remove random noise you cannot predict. It adds a second copy of it.">About 0.5 mL, half as much</li>
+      <li data-why="That would be true only if the adjustments had no effect at all.">About 1.0 mL, unchanged</li>
+      <li data-correct>About 1.4 mL</li>
+      <li data-why="The variance doubles, so the standard deviation grows by √2, not by 2.">About 2.0 mL</li>
+    </ul>
+    <div class="check-explain"><p>Each bottle now carries its own noise plus the reversed noise of the previous bottle. Two independent disturbances of variance <span class="m">\sigma^2</span> add to <span class="m">2\sigma^2</span>, so the standard deviation becomes <span class="m">\sqrt{2}\times 1.0 \approx 1.41</span> mL.</p></div>
+  </div>
+</section>
+
+<section id="history">
+  <h2>Where SPC came from</h2>
+  <p>Quality control is older than statistics. Medieval guilds controlled quality with long apprenticeships and proof of skill. What changed in the twentieth century was mass production: telephone equipment, for instance, needed millions of interchangeable parts, and nobody could inspect quality into every one of them.</p>
+  <p>On 16 May 1924, Shewhart sent his manager at Bell Labs a one-page memo with a sketch of what we now call a control chart. His 1931 book, <em>Economic Control of Quality of Manufactured Product</em>, set out the theory. His colleagues Harold Dodge and Harry Romig applied the same statistics to sampling inspection. Together their work is the foundation of the methods in this course.</p>
+
+  <figure class="fig">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Forty years that built the toolkit</h3></div>
+    <div class="timeline">
+      <div class="tl-axis" aria-hidden="true">
+        <span class="tl-dot first" style="--y:1924"></span><span class="tl-dot" style="--y:1931"></span><span class="tl-dot" style="--y:1944"></span>
+        <span class="tl-dot" style="--y:1947"></span><span class="tl-dot" style="--y:1950"></span><span class="tl-dot" style="--y:1954"></span>
+        <span class="tl-dot" style="--y:1956"></span><span class="tl-dot" style="--y:1959"></span><span class="tl-dot" style="--y:1963"></span>
+        <span class="tl-tick" style="--y:1920">1920</span><span class="tl-tick" style="--y:1930">1930</span><span class="tl-tick" style="--y:1940">1940</span>
+        <span class="tl-tick" style="--y:1950">1950</span><span class="tl-tick" style="--y:1960">1960</span>
+      </div>
+      <ol class="tl-list">
+        <li><span class="yr">1924</span><span>Shewhart's memo at Bell Labs sketches the first control chart. <a href="02-control-charts.html">Module 2</a></span></li>
+        <li><span class="yr">1931</span><span>Shewhart publishes <em>Economic Control of Quality of Manufactured Product</em>. <a href="03-xbar-r-s.html">Module 3</a></span></li>
+        <li><span class="yr">1944</span><span>Dodge and Romig publish their sampling inspection tables, built at Bell Labs since the late 1920s. <a href="09-acceptance-sampling.html">Module 9</a></span></li>
+        <li><span class="yr">1947</span><span>Harold Hotelling extends Student's t to many variables at once, the basis of the T² chart. <a href="10-multivariate.html">Module 10</a></span></li>
+        <li><span class="yr">1950</span><span>W. Edwards Deming lectures Japanese engineers and managers on statistical quality control.</span></li>
+        <li><span class="yr">1954</span><span>E. S. Page proposes the cumulative sum (CUSUM) scheme. <a href="06-cusum.html">Module 6</a></span></li>
+        <li><span class="yr">1956</span><span>Western Electric's <em>Statistical Quality Control Handbook</em> codifies the run rules still used today. <a href="02-control-charts.html#run-rules">Module 2</a></span></li>
+        <li><span class="yr">1959</span><span>S. W. Roberts introduces the geometric (exponentially weighted) moving average chart. <a href="07-ewma.html">Module 7</a></span></li>
+        <li><span class="yr">1963</span><span>MIL-STD-105D standardizes acceptance sampling by attributes. <a href="09-acceptance-sampling.html">Module 9</a></span></li>
+      </ol>
+    </div>
+  </figure>
+</section>
+
+<section id="monitoring-and-control">
+  <h2>Monitoring, then control</h2>
+  <p>The handbook draws a line between two families of tools. <strong>Statistical process control</strong> watches the process while it runs, using control charts to compare what is happening now with what happened before. <strong>Statistical quality control</strong> inspects finished product, using sampling plans to decide whether a lot is fit to ship. Most of this course is about the first; <a href="09-acceptance-sampling.html">module 9</a> covers the second.</p>
+  <p>Process control itself happens in two phases.</p>
+  <ol class="steps">
+    <li><span><strong>Phase I: establish the baseline.</strong> Collect historical data, compute trial control limits, and investigate any points outside them. If a point has a known assignable cause, remove it and recompute. Repeat until the remaining data describe the process when it is running as it should.</span></li>
+    <li><span><strong>Phase II: monitor.</strong> Freeze the Phase I limits and plot new data against them as they arrive. A signal means today's process no longer looks like the baseline.</span></li>
+  </ol>
+  <p>When a Phase II chart signals, someone has to act. The handbook names two ways to do it. An <strong>out-of-control action plan</strong> (OCAP) is a flowchart, written in advance for each chart, that tells the engineer what to check and in what order. An <strong>advanced process control loop</strong> automates the response, adjusting the process by an amount proportional to the deviation.</p>
+
+  <figure class="fig">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">The Phase II monitoring loop</h3></div>
+    <div class="diagram">
+      <svg viewBox="0 0 760 230" role="img" aria-label="Flow diagram: measure, plot against limits, check for a signal. No signal returns to measuring. A signal leads to the out-of-control action plan, finding and removing the assignable cause, then back to measuring.">
+        <defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="dg-arrowhead" d="M0,0L10,5L0,10z"/></marker></defs>
+        <rect class="dg-node" x="20" y="40" width="150" height="58" rx="10"/>
+        <text class="dg-text" x="95" y="66" text-anchor="middle">Measure a sample</text>
+        <text class="dg-sub" x="95" y="84" text-anchor="middle">on the agreed schedule</text>
+        <rect class="dg-node" x="215" y="40" width="150" height="58" rx="10"/>
+        <text class="dg-text" x="290" y="66" text-anchor="middle">Plot the statistic</text>
+        <text class="dg-sub" x="290" y="84" text-anchor="middle">against Phase I limits</text>
+        <path class="dg-node-accent" d="M480,24 L548,69 L480,114 L412,69 Z"/>
+        <text class="dg-text" x="480" y="74" text-anchor="middle">Signal?</text>
+        <rect class="dg-node-signal" x="590" y="40" width="152" height="58" rx="10"/>
+        <text class="dg-text" x="666" y="66" text-anchor="middle">Follow the OCAP</text>
+        <text class="dg-sub" x="666" y="84" text-anchor="middle">look for the assignable cause</text>
+        <rect class="dg-node-good" x="590" y="150" width="152" height="58" rx="10"/>
+        <text class="dg-text" x="666" y="176" text-anchor="middle">Remove the cause</text>
+        <text class="dg-sub" x="666" y="194" text-anchor="middle">and record what happened</text>
+        <path class="dg-edge" d="M170,69 H209" marker-end="url(#ah1)"/>
+        <path class="dg-edge" d="M365,69 H406" marker-end="url(#ah1)"/>
+        <path class="dg-edge" d="M548,69 H584" marker-end="url(#ah1)"/>
+        <text class="dg-edge-label" x="566" y="60" text-anchor="middle">yes</text>
+        <path class="dg-edge" d="M666,98 V144" marker-end="url(#ah1)"/>
+        <path class="dg-edge" d="M480,114 V150 H95 V104" marker-end="url(#ah1)"/>
+        <text class="dg-edge-label" x="492" y="136">no</text>
+        <text class="dg-sub" x="290" y="166" text-anchor="middle">no signal: leave the process alone</text>
+        <path class="dg-edge" d="M590,179 H95 V150" />
+      </svg>
+    </div>
+    <figcaption>The loop only works if the "no" branch really means no action. Reacting between signals is the tampering you saw in the previous figure.</figcaption>
+  </figure>
+</section>
+
+<section id="four-states">
+  <h2>In control is not the same as good</h2>
+  <p>Control limits and specification limits answer different questions, and mixing them up is one of the most common mistakes in quality work.</p>
+  <div class="def-grid">
+    <div class="def">
+      <h3><span class="dot"></span>Control limits</h3>
+      <span class="aka">The voice of the process</span>
+      <p>Calculated from the process's own data. They describe what the process does when only common causes act. They say nothing about what the customer needs.</p>
+    </div>
+    <div class="def">
+      <h3><span class="dot spec"></span>Specification limits</h3>
+      <span class="aka">The voice of the customer</span>
+      <p>Set by the design or the customer: this bottle must hold between 496 and 504&nbsp;mL. They say nothing about what the process is capable of.</p>
+    </div>
+  </div>
+  <p>Put the two together and a process can be in one of four states. The terms below come from Donald Wheeler, and the actions follow the handbook's sections on processes that are out of control and processes that are in control but unacceptable.</p>
+
+  <figure class="fig" id="fig-states">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">The four states of a process</h3></div>
+    <div class="controls">
+      <div class="control">
+        <span class="control-label">Choose a state</span>
+        <div class="seg" id="state-pick">
+          <button data-value="ideal" aria-pressed="true">Ideal</button>
+          <button data-value="threshold">Threshold</button>
+          <button data-value="brink">Brink of chaos</button>
+          <button data-value="chaos">Chaos</button>
+        </div>
+      </div>
+    </div>
+    <div class="fig-chart" id="state-chart"></div>
+    <ul class="legend" id="state-legend"></ul>
+    <div id="state-readouts"></div>
+    <div class="state-panel" id="state-panel" aria-live="polite"><h4></h4><p class="desc"></p><p class="do"></p></div>
+  </figure>
+
+  <p>Two lessons follow. First, a process must be stable before you can judge its capability, because an unstable process has no single capability to measure. Second, when a stable process makes bad product, hunting for special causes is pointless. The bad product is coming from common causes, and the fix is a change to the process: a designed experiment, recalibration, a better machine, or a fresh look at historical data. <a href="08-capability.html">Module 8</a> shows how to measure the gap.</p>
+
+  <div class="check" id="m1-q4">
+    <p class="check-q">A stable process puts 2% of its bottles below the 496&nbsp;mL specification. No points fall outside its control limits and the run rules are quiet. Which response fits?</p>
+    <ul class="check-options">
+      <li data-why="There is no signal, so there is no special cause to find. The low bottles come from the process's normal variation.">Investigate each low bottle to find its special cause</li>
+      <li data-why="Control limits describe the process. Moving them changes nothing about the bottles.">Widen the control limits until the low bottles fit</li>
+      <li data-correct>Change the process: reduce its spread or move its average</li>
+      <li data-why="Being in control means predictable, not acceptable. This process will predictably keep making 2% short fills.">Nothing, because the process is in control</li>
+    </ul>
+    <div class="check-explain"><p>This is the threshold state. The process is predictable, and it predictably makes some nonconforming product. Only a change to the system, such as recentering the fill or reducing variation, will fix it.</p></div>
+  </div>
+
+  <div class="check" id="m1-q5">
+    <p class="check-q">Which statement about control limits and specification limits is true?</p>
+    <ul class="check-options">
+      <li data-why="It is the other way round.">Control limits come from the customer; specification limits come from process data</li>
+      <li data-correct>Control limits are calculated from process data; specification limits are set by the design or customer</li>
+      <li data-why="They are often different, and comparing them is exactly how capability is judged.">They should always be equal for a well-run process</li>
+    </ul>
+    <div class="check-explain"><p>Control limits are the voice of the process; specification limits are the voice of the customer. Capability analysis, in module 8, compares the two.</p></div>
+  </div>
+</section>
+
+<section id="summary" class="summary">
+  <h2>Takeaways</h2>
+  <ul>
+    <li>All processes vary. The question is whether the variation is stable over time.</li>
+    <li>Common causes are many, small and always present. Special causes are specific, identifiable and intermittent.</li>
+    <li>Adjusting a stable process in response to noise (tampering) increases variation.</li>
+    <li>SPC monitors the process in two phases: set limits from a clean baseline, then watch new data against them.</li>
+    <li>Control limits are the voice of the process. Specification limits are the voice of the customer. A process can be in control and still unacceptable.</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>

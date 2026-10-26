@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en" class="math-pending">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>How control charts work · In Control</title>
+<meta name="description" content="Center lines, three-sigma limits, false alarms, average run length, the Western Electric run rules, and Phase I versus Phase II.">
+<script>try{var t=localStorage.getItem('in-control:theme');if(t&&t!=='system')document.documentElement.dataset.theme=t}catch(e){}setTimeout(function(){document.documentElement.classList.remove('math-pending')},3000)</script>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="How control charts work · In Control">
+<meta property="og:description" content="Center lines, three-sigma limits, false alarms, average run length, the Western Electric run rules, and Phase I versus Phase II.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap">
+<link rel="stylesheet" href="../assets/css/course.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script type="module" src="../assets/js/course.js"></script>
+<script type="module" src="../assets/js/modules/02-control-charts.js"></script>
+</head>
+<body data-module="2">
+<div class="shell">
+<nav class="rail" id="rail"></nav>
+<main class="page" id="main">
+
+<header class="module-head">
+  <h1>How control charts work</h1>
+  <p class="lede">A control chart is a running hypothesis test. Each new point asks whether the process still looks like it did when the limits were set. This module explains where the limits come from, what they cost, and how to read the patterns between them.</p>
+</header>
+
+<section id="anatomy">
+  <h2>Anatomy of a control chart</h2>
+  <p>A control chart plots one statistic of the process in time order: a single measurement, the average of a small sample, a count of defects. Three horizontal lines turn that plot into a decision tool.</p>
+  <ul>
+    <li>The <strong>center line</strong> is the average of the statistic while the process is in control.</li>
+    <li>The <strong>upper and lower control limits</strong> (UCL and LCL) sit far enough from the center line that almost every in-control point falls between them.</li>
+    <li>The bands between the center line and the limits are often split into <strong>zones</strong> at one, two and three standard deviations. They come into play with the run rules later in this module.</li>
+  </ul>
+  <p>For a statistic <span class="m">w</span> with in-control mean <span class="m">\mu_w</span> and standard deviation <span class="m">\sigma_w</span>, Shewhart's general model is</p>
+  <div class="eq">\text{UCL} = \mu_w + k\,\sigma_w \qquad \text{CL} = \mu_w \qquad \text{LCL} = \mu_w - k\,\sigma_w</div>
+  <p>with <span class="m">k = 3</span> almost everywhere. Every chart in this course is a version of this recipe. They differ in which statistic they plot and how they estimate <span class="m">\mu_w</span> and <span class="m">\sigma_w</span>.</p>
+
+  <figure class="fig" id="fig-anatomy">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Shaft diameter, average of 4 shafts per hour</h3></div>
+    <div class="fig-chart" id="anatomy-chart"></div>
+    <ul class="legend" id="anatomy-legend"></ul>
+    <figcaption>Hover the chart, or focus it and use the arrow keys, to read each subgroup. The shaded bands are zones C, B and A at one, two and three standard deviations from the center line. One point breaks the upper limit. The handbook's definition of "in control" asks for two things: every point inside the limits, and no systematic pattern among them.</figcaption>
+  </figure>
+
+  <div class="from-nist">
+    <span class="eyebrow">Handbook 6.3.1</span>
+    <p>Points inside the limits do not prove the process is in control. The handbook's example is a run of 25 points above the center line out of 30, followed by 5 below. No single point is extreme, yet the sequence is far too orderly to be chance.</p>
+  </div>
+</section>
+
+<section id="three-sigma">
+  <h2>Why three sigma?</h2>
+  <p>Every time a point is plotted, the chart makes a decision, and it can be wrong in two ways.</p>
+  <div class="def-grid">
+    <div class="def">
+      <h3><span class="dot signal"></span>False alarm</h3>
+      <span class="aka">Type I error, probability α</span>
+      <p>A point lands outside the limits even though nothing changed. Someone stops the line and searches for a cause that does not exist.</p>
+    </div>
+    <div class="def">
+      <h3><span class="dot alt"></span>Missed signal</h3>
+      <span class="aka">Type II error, probability β</span>
+      <p>The process has shifted, but the point still lands inside the limits. Bad product keeps flowing until a later point catches it.</p>
+    </div>
+  </div>
+  <p>Wide limits make false alarms rare and misses common. Narrow limits do the opposite. For normally distributed data, limits at three standard deviations leave 0.135% in each tail, a false-alarm rate of 0.27% per point. That is close to the "0.001 probability limits" the handbook describes, which put exactly 0.1% in each tail at <span class="m">\pm 3.09\sigma</span>. British practice tends to use probability limits; American practice uses three sigma whether or not the data are exactly normal.</p>
+
+  <figure class="fig" id="fig-tradeoff">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">The trade-off between false alarms and missed shifts</h3></div>
+    <div class="controls">
+      <label class="control" for="to-k">
+        <span class="control-label">Limits at ±k σ <output for="to-k"></output></span>
+        <input type="range" id="to-k" min="1.5" max="4" step="0.05" value="3">
+      </label>
+      <label class="control" for="to-shift">
+        <span class="control-label">Process mean shifts by <output for="to-shift"></output></span>
+        <input type="range" id="to-shift" min="0" max="3" step="0.1" value="1">
+      </label>
+    </div>
+    <div class="fig-chart" id="tradeoff-chart"></div>
+    <ul class="legend" id="tradeoff-legend"></ul>
+    <div id="tradeoff-readouts"></div>
+    <figcaption>The gray curve is the in-control distribution of the plotted statistic; the violet curve is the same process after its mean shifts. Red tails are false alarms. The violet shading is the chance a single point catches the shift. Pull the limits in to 2σ and watch the false-alarm rate climb; push them out to 4σ and watch detection collapse.</figcaption>
+  </figure>
+
+  <p>Three sigma is a convention, and the handbook calls the underlying choice arbitrary: management can pick the false-alarm risk it can live with. The convention has held for a century because it balances the two errors well for most processes, and because it is robust. Even when the data are not normal, three-sigma limits usually keep false alarms rare.</p>
+  <div class="pitfall">
+    <span class="eyebrow">Common mistake</span>
+    <p>Skewed data shift the risk to one side. The handbook gives a Poisson example with mean 0.8: the three-sigma upper limit is 3.48, and the chance of exceeding it is about 0.009, nearly seven times the nominal 0.00135. Module 5 shows how to handle this for counts.</p>
+  </div>
+
+  <div class="check" id="m2-q1">
+    <p class="check-q">A three-sigma chart monitors a normally distributed statistic that has not changed. On average, how often will a point fall outside the limits?</p>
+    <ul class="check-options">
+      <li data-why="That is the rate for two-sigma limits (about 4.6% of points, roughly 1 in 22).">About 1 point in 22</li>
+      <li data-why="0.27% of points is the right rate, which is 1 in 370, not 1 in 100.">About 1 point in 100</li>
+      <li data-correct>About 1 point in 370</li>
+      <li data-why="Three-sigma limits are wide but not infinite; false alarms still happen.">Never, if the process is in control</li>
+    </ul>
+    <div class="check-explain"><p>The two tails beyond ±3σ hold 0.135% each, 0.27% in total. One in 1/0.0027 ≈ 370 points is a false alarm.</p></div>
+  </div>
+</section>
+
+<section id="arl">
+  <h2>Average run length</h2>
+  <p>A false-alarm rate per point is hard to feel. The <strong>average run length</strong> (ARL) turns it into something operational: the average number of points plotted before the chart signals. If each point independently signals with probability <span class="m">p</span>, the wait until the first signal follows a geometric distribution with mean</p>
+  <div class="eq">\text{ARL} = \frac{1}{p}</div>
+  <p>Two ARLs describe any chart. The in-control ARL, written <span class="m">\text{ARL}_0</span>, should be long: with three-sigma limits it is <span class="m">1/0.0027 \approx 370</span>. The out-of-control ARL for a given shift should be short. For a shift of one standard deviation, the chance a point lands beyond the upper limit is <span class="m">P(Z > 2) \approx 0.0228</span>, so a three-sigma chart takes about 44 points on average to notice.</p>
+
+  <figure class="fig" id="fig-arl">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">How long until the chart notices?</h3></div>
+    <div class="controls">
+      <label class="control" for="arl-shift">
+        <span class="control-label">Shift in the mean <output for="arl-shift"></output></span>
+        <input type="range" id="arl-shift" min="0" max="3" step="0.25" value="0">
+      </label>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn" type="button" id="arl-sim">Run 2,000 more charts</button>
+      </div>
+    </div>
+    <div class="fig-split">
+      <div class="fig-chart" id="arl-curve"></div>
+      <div class="fig-chart" id="arl-hist"></div>
+    </div>
+    <div id="arl-readouts"></div>
+    <figcaption>Left: the ARL of a three-sigma chart against the size of the shift, on a logarithmic scale. Right: simulated run lengths for the chosen shift, one bar per range of points-until-signal. The run length is very spread out. With no shift, half of all charts raise a false alarm within about 256 points even though the average is 370.</figcaption>
+  </figure>
+
+  <div class="check" id="m2-q2" data-answer="44" data-tolerance="1.5">
+    <p class="check-q">A three-sigma chart's process mean shifts up by exactly one standard deviation. Each new point now has about a 2.28% chance of landing beyond a limit. What is the average run length, in points, until the chart signals? Round to the nearest whole number.</p>
+    <div class="check-explain"><p>ARL = 1/p = 1/0.0228 ≈ 44 points. The handbook gives 44.0 for this case. Small shifts take a Shewhart chart a long time to notice, which is the motivation for the CUSUM and EWMA charts in modules 6 and 7.</p></div>
+  </div>
+</section>
+
+<section id="run-rules">
+  <h2>Run rules</h2>
+  <p>A point beyond three sigma is the bluntest signal. Patterns inside the limits carry information too, and in 1956 the Western Electric Company's quality handbook codified a set of rules to catch them. They are known as the WECO rules, and the NIST handbook lists four, plus two trend rules.</p>
+
+  <figure class="fig" id="fig-rules">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">The Western Electric rules and two trend rules</h3></div>
+    <div class="mini-grid" id="rules-grid"></div>
+    <figcaption>Each panel shows the smallest pattern that completes the rule; red points are the ones that trigger it. Rules 2 to 4 catch smaller, sustained shifts that rarely produce a single point beyond three sigma. Rules 5 and 6 catch trends and over-adjustment.</figcaption>
+  </figure>
+
+  <p>Each rule is tuned to have a false-alarm probability similar to a single point beyond three sigma. Used together, though, they add up. The handbook notes that the in-control ARL falls from 371 with the three-sigma rule alone to about 92 with all four WECO rules. More sensitivity to real shifts comes at the price of roughly four times as many false alarms, so many sites apply the full set only to charts where small shifts matter.</p>
+
+  <figure class="fig" id="fig-game">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Spot the signal</h3></div>
+    <div class="game-bar">
+      <p class="game-msg" id="game-msg" aria-live="polite">Click the first point that completes a rule, or choose “No signal”.</p>
+      <div class="control-row">
+        <button class="btn" type="button" id="game-none">No signal</button>
+        <button class="btn primary" type="button" id="game-next">New chart</button>
+      </div>
+    </div>
+    <div class="fig-chart" id="game-chart"></div>
+    <div class="game-bar">
+      <ul class="legend" id="game-legend"></ul>
+      <span class="score" id="game-score">0 of 0 correct</span>
+    </div>
+    <figcaption>Each chart has 25 points with known limits and zones. Some are in control; others hide one of the patterns above. Any point that is part of the first completed pattern counts as a correct answer. On a keyboard, focus the chart, move with the arrow keys and press Enter to choose a point.</figcaption>
+  </figure>
+
+  <div class="check" id="m2-q3">
+    <p class="check-q">On an X̄ chart, the last five points sit at +1.4σ, +0.6σ, +1.8σ, +1.2σ and +1.1σ above the center line. Which rule, if any, do they violate?</p>
+    <ul class="check-options">
+      <li data-why="No point is beyond 3σ.">Rule 1: one point beyond 3σ</li>
+      <li data-why="Only one point (+1.8σ) is even close to 2σ, and none is beyond it.">Rule 2: two of three beyond 2σ</li>
+      <li data-correct>Rule 3: four of five beyond 1σ on the same side</li>
+      <li data-why="Five points on one side is not enough; rule 4 needs eight in a row.">Rule 4: eight in a row on one side</li>
+    </ul>
+    <div class="check-explain"><p>Four of the five points (+1.4, +1.8, +1.2, +1.1) are beyond +1σ on the same side, which completes rule 3. It is the signature of a moderate upward shift of about one standard deviation.</p></div>
+  </div>
+
+  <div class="check" id="m2-q4">
+    <p class="check-q">A plant switches on all four Western Electric rules on a chart that previously used only the three-sigma rule. If the process stays in control, what happens?</p>
+    <ul class="check-options">
+      <li data-why="The rules detect patterns, and an in-control process produces those patterns by chance from time to time.">False alarms stay the same, because the process is in control</li>
+      <li data-correct>False alarms become roughly four times as frequent</li>
+      <li data-why="Adding rules can only add signals, never remove them.">False alarms become rarer, because the rules double-check each other</li>
+    </ul>
+    <div class="check-explain"><p>Each rule adds its own small false-alarm probability. The handbook puts the in-control ARL at about 92 points with all four rules, against 371 with the three-sigma rule alone.</p></div>
+  </div>
+</section>
+
+<section id="phases">
+  <h2>Setting limits: Phase I and Phase II</h2>
+  <p>Control limits are only as good as the data they come from. If the baseline includes special causes, the limits will be too wide and the chart will miss the very problems it exists to catch. That is why limit-setting is its own phase.</p>
+  <ol class="steps">
+    <li><span><strong>Collect enough history.</strong> Shewhart suggested at least 25 subgroups of size 4 before concluding a process is in control.</span></li>
+    <li><span><strong>Compute trial limits</strong> from all of it.</span></li>
+    <li><span><strong>Investigate every signal.</strong> If a point has a documented assignable cause, drop it and recompute. If no cause can be found, it usually stays.</span></li>
+    <li><span><strong>Freeze the limits</strong> and move to Phase II, plotting new data against them.</span></li>
+  </ol>
+
+  <figure class="fig" id="fig-phases">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Clean the baseline, then monitor</h3></div>
+    <div class="game-bar">
+      <p class="game-msg" id="phase-msg" aria-live="polite">Phase I: click a red point to read its log entry and exclude it if the cause is real.</p>
+      <div class="control-row">
+        <button class="btn primary" type="button" id="phase-go">Freeze limits and start Phase II</button>
+        <button class="btn ghost" type="button" id="phase-reset">Reset</button>
+      </div>
+    </div>
+    <div class="fig-chart" id="phase-chart"></div>
+    <ul class="legend" id="phase-legend"></ul>
+    <div id="phase-readouts"></div>
+    <figcaption>Thirty days of tensile-strength tests on a steel wire, one coupon per day. Two days have entries in the lab log. Excluding them tightens the limits, which makes Phase II more sensitive. Try freezing the limits before cleaning the baseline and compare what Phase II catches.</figcaption>
+  </figure>
+
+  <p>Once in Phase II, recalculating limits should be rare and deliberate. The handbook suggests doing it only with a valid reason: at least 30 new points with no known process change, a major change to the process, or the removal of a preventable disruption. Recomputing limits every week lets the chart drift along with the process and hides slow changes.</p>
+
+  <div class="check" id="m2-q5">
+    <p class="check-q">During Phase I, one point falls outside the trial limits. The lab log shows the sample was tested with a mislabeled calibration standard. What should you do?</p>
+    <ul class="check-options">
+      <li data-why="Keeping a point with a known assignable cause inflates the limits and blunts the chart.">Keep it; every point is part of the process history</li>
+      <li data-correct>Exclude it and recompute the trial limits</li>
+      <li data-why="Widening the limits to include a known special cause defeats the purpose of Phase I.">Widen the limits to four sigma so it fits</li>
+    </ul>
+    <div class="check-explain"><p>Phase I aims for limits that describe the process when only common causes act. A point with a documented special cause does not belong in that baseline, so remove it and recompute. Repeat until no unexplained signals remain.</p></div>
+  </div>
+</section>
+
+<section id="families">
+  <h2>A map of the chart family</h2>
+  <p>Everything from here on uses the logic of this module with a different statistic or a different memory. The table is a preview; the <a href="../reference/chooser.html">chart chooser</a> walks you to the right one for your data.</p>
+  <div class="table-scroll">
+    <table class="ref full">
+      <thead><tr><th>Data</th><th>Chart</th><th>Plots</th><th>Module</th></tr></thead>
+      <tbody>
+        <tr><td>Measurements in small subgroups</td><td>X̄ and R, X̄ and s</td><td>Subgroup average and spread</td><td><a href="03-xbar-r-s.html">3</a></td></tr>
+        <tr><td>One measurement at a time</td><td>Individuals and moving range</td><td>Each value and the jump from the last</td><td><a href="04-individuals.html">4</a></td></tr>
+        <tr><td>Counts and proportions</td><td>p, np, c, u</td><td>Fraction defective or defects per unit</td><td><a href="05-attributes.html">5</a></td></tr>
+        <tr><td>Small, sustained shifts</td><td>CUSUM, EWMA</td><td>Accumulated or weighted history</td><td><a href="06-cusum.html">6</a>, <a href="07-ewma.html">7</a></td></tr>
+        <tr><td>Several correlated variables</td><td>Hotelling T², MEWMA</td><td>One distance that accounts for correlation</td><td><a href="10-multivariate.html">10</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="summary" class="summary">
+  <h2>Takeaways</h2>
+  <ul>
+    <li>Every control chart plots a statistic against limits at its in-control mean plus or minus three standard deviations.</li>
+    <li>Limits trade false alarms against missed shifts. Three sigma gives a false alarm about once every 370 points for normal data.</li>
+    <li>Average run length summarizes a chart: long when nothing has changed, short when something has. A three-sigma chart needs about 44 points to catch a one-sigma shift.</li>
+    <li>Run rules catch patterns inside the limits, at the cost of more frequent false alarms.</li>
+    <li>Phase I builds limits from a clean baseline; Phase II freezes them and monitors.</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>

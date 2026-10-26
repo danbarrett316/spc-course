@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en" class="math-pending">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>CUSUM charts · In Control</title>
+<meta name="description" content="Cumulative sum charts: why Shewhart charts are slow on small shifts, how the V-mask and the tabular CUSUM work, and how average run length guides the choice of k and h.">
+<script>try{var t=localStorage.getItem('in-control:theme');if(t&&t!=='system')document.documentElement.dataset.theme=t}catch(e){}setTimeout(function(){document.documentElement.classList.remove('math-pending')},3000)</script>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="CUSUM charts · In Control">
+<meta property="og:description" content="Cumulative sum charts: why Shewhart charts are slow on small shifts, how the V-mask and the tabular CUSUM work, and how average run length guides the choice of k and h.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap">
+<link rel="stylesheet" href="../assets/css/course.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script type="module" src="../assets/js/course.js"></script>
+<script type="module" src="../assets/js/modules/06-cusum.js"></script>
+</head>
+<body data-module="6">
+<div class="shell">
+<nav class="rail" id="rail"></nav>
+<main class="page" id="main">
+
+<header class="module-head">
+  <h1>CUSUM charts</h1>
+  <p class="lede">A Shewhart chart judges each sample on its own, so a small, lasting shift in the mean can hide for dozens of samples. A cumulative sum chart adds up every deviation from target, and a persistent shift soon piles up into a clear signal.</p>
+</header>
+
+<section id="small-shifts">
+  <h2>Why Shewhart charts are slow on small shifts</h2>
+  <p>An <span class="m">\bar{X}</span> chart asks one question of each new subgroup: does this average fall outside <span class="m">\pm 3\sigma_{\bar{x}}</span>? That rule catches large, sudden changes almost at once. It is poor at catching small ones, because it forgets everything it saw before the latest point.</p>
+  <p>Suppose the mean moves up by one standard error, <span class="m">1\sigma_{\bar{x}}</span>. The upper limit is now only <span class="m">2\sigma_{\bar{x}}</span> above the new mean, so each subgroup has about a 2.3% chance of crossing it. You wait about 44 subgroups for a signal on average, and a shift of <span class="m">0.5\sigma_{\bar{x}}</span> takes about 155. The handbook's run-length analysis finds that a cumulative sum (CUSUM) chart detects shifts of about <span class="m">2\sigma_{\bar{x}}</span> or less faster than a Shewhart chart does.</p>
+
+  <figure class="fig" id="fig-race">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">The same small shift on two charts</h3></div>
+    <div class="controls">
+      <label class="control" for="race-shift">
+        <span class="control-label">Size of the shift <output for="race-shift">1.00σ</output></span>
+        <input type="range" id="race-shift" min="0" max="3" step="0.25" value="1">
+      </label>
+      <label class="control" for="race-start">
+        <span class="control-label">Shift starts at <output for="race-start">sample 20</output></span>
+        <input type="range" id="race-start" min="5" max="45" step="1" value="20">
+      </label>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn small" id="race-new" type="button">New sample</button>
+      </div>
+    </div>
+    <div class="fig-chart" id="race-xbar"></div>
+    <div class="fig-chart" id="race-cusum"></div>
+    <ul class="legend" id="race-legend"></ul>
+    <div id="race-readouts"></div>
+    <figcaption>Both charts watch the same 60 subgroup averages from a process centered on 325 with <span class="m">\sigma_{\bar{x}} = 0.635</span>, the process of the handbook example later in this module. Shift sizes are in units of <span class="m">\sigma_{\bar{x}}</span>. Top: an <span class="m">\bar{X}</span> chart with 3σ limits. Bottom: a two-sided CUSUM with <span class="m">k = 0.5\sigma_{\bar{x}}</span> and <span class="m">h = 5\sigma_{\bar{x}}</span>, which section 6.4 builds step by step. In this run a 1σ shift takes the <span class="m">\bar{X}</span> chart 31 samples to catch and the CUSUM 10. Raise the shift to 3σ and the <span class="m">\bar{X}</span> chart wins. Press New sample to see how much single runs vary; the last two readouts give the long-run average delays.</figcaption>
+  </figure>
+
+  <p>The comparison is fair. With <span class="m">h = 5\sigma_{\bar{x}}</span> this CUSUM raises a false alarm about once every 465 samples, less often than the <span class="m">\bar{X}</span> chart's once every 370. It is the more cautious chart and still the faster one for small shifts.</p>
+
+  <div class="check" id="m6-q1">
+    <p class="check-q">An <span class="m">\bar{X}</span> chart has 3σ limits. The process mean moves up by exactly <span class="m">1\sigma_{\bar{x}}</span> and stays there. About how many subgroups pass, on average, before one falls above the UCL?</p>
+    <ul class="check-options">
+      <li data-why="That is the delay for a 3σ shift, when the new mean sits right on the UCL and half the points cross it.">About 2</li>
+      <li data-why="That is the in-control run length, the average gap between false alarms. The shift shortens it.">About 370</li>
+      <li data-correct>About 44</li>
+      <li data-why="Each point still has a small chance of crossing the limit, so a signal comes eventually.">Never, because the shift is smaller than the limits</li>
+    </ul>
+    <div class="check-explain"><p>After the shift the UCL is <span class="m">2\sigma_{\bar{x}}</span> above the new mean. The chance that a normal value lands more than 2 standard deviations above its mean is 0.0228, so the average wait is <span class="m">1/0.0228 \approx 44</span> subgroups.</p></div>
+  </div>
+</section>
+
+<section id="cumulative-sum">
+  <h2>Add up the deviations</h2>
+  <p>The fix is memory. Instead of plotting each subgroup average, plot the running total of its deviations from the in-control mean:</p>
+  <div class="eq">S_m = \sum_{i=1}^{m} \left(\bar{x}_i - \hat{\mu}_0\right)</div>
+  <dl class="where">
+    <dt><span class="m">\bar{x}_i</span></dt><dd>the average of subgroup <span class="m">i</span></dd>
+    <dt><span class="m">\hat{\mu}_0</span></dt><dd>the in-control mean, estimated from Phase I data</dd>
+    <dt><span class="m">m</span></dt><dd>the number of the latest subgroup</dd>
+  </dl>
+  <p>While the process stays on target, the deviations are positive about as often as negative, and the sum wanders around zero with no trend. When the mean moves to <span class="m">\hat{\mu}_0 + \delta</span>, each new subgroup adds <span class="m">\delta</span> on average, so the sum climbs along a line of slope <span class="m">\delta</span>. A shift too small to push any single point past a control limit still bends the line. Some software divides each deviation by <span class="m">\sigma_{\bar{x}}</span> so the sum is in standard-error units; the shape of the plot stays the same.</p>
+  <div class="key-idea">
+    <span class="eyebrow">Key idea</span>
+    <p>On a cumulative sum chart the height of the line means little on its own. The slope carries the information: a flat stretch says the mean is on target, and a steady slope of <span class="m">\delta</span> says the mean has moved by <span class="m">\delta</span>.</p>
+  </div>
+
+  <figure class="fig" id="fig-slope">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Reading the mean from the slope</h3></div>
+    <div class="controls">
+      <label class="control" for="slope-from">
+        <span class="control-label">First group <output for="slope-from">13</output></span>
+        <input type="range" id="slope-from" min="1" max="20" step="1" value="13">
+      </label>
+      <label class="control" for="slope-to">
+        <span class="control-label">Last group <output for="slope-to">20</output></span>
+        <input type="range" id="slope-to" min="1" max="20" step="1" value="20">
+      </label>
+    </div>
+    <div class="fig-chart" id="slope-chart"></div>
+    <div id="slope-readouts"></div>
+    <figcaption>The handbook's 20 subgroup averages (<span class="m">n = 4</span>, target 325). Each gray bar is one deviation <span class="m">\bar{x}_i - 325</span>, drawn under the step it adds to the blue cumulative sum. The shaded stretch is the one you choose, and the slope of the dashed line across it equals the average deviation over those groups. Set the stretch to groups 1–12, then to 13–20. The slope jumps from about −0.21 to about 2.70, so the mean moved from about 324.79 to about 327.70 at group 13.</figcaption>
+  </figure>
+
+  <div class="check" id="m6-q2" data-answer="327.70" data-tolerance="0.02">
+    <p class="check-q">In the handbook example the cumulative sum is −2.50 after group 12 and 19.08 after group 20 (target 325). Estimate the process mean over groups 13 to 20, to two decimals.</p>
+    <div class="check-explain"><p>The sum rose by <span class="m">19.08 - (-2.50) = 21.58</span> over 8 groups, a slope of <span class="m">21.58 / 8 = 2.70</span>. Each group added 2.70 on average, so the mean over that stretch was about <span class="m">325 + 2.70 = 327.70</span>.</p></div>
+  </div>
+</section>
+
+<section id="v-mask">
+  <h2>The V-mask</h2>
+  <p>A cumulative sum makes a shift visible, but someone still has to decide when a slope is steep enough to act on. In 1959 G. A. Barnard proposed a V-shaped template for that job, the V-mask. The handbook describes its use in four steps.</p>
+  <ol class="steps">
+    <li><span><strong>Place the mask.</strong> Put the mask's origin on the latest point of the cumulative sum, with the V lying on its side and opening back toward earlier samples.</span></li>
+    <li><span><strong>Read its shape.</strong> The vertex sits a lead distance <span class="m">d</span> ahead of the origin. The arms slope back from the vertex at <span class="m">\pm k</span> per sample, so at the origin they are <span class="m">h = dk</span> above and below the point.</span></li>
+    <li><span><strong>Look for points outside the arms.</strong> If any earlier point lies outside, the process is out of control. A point below the lower arm means the sum has since risen faster than the arm allows, so the mean has moved up. A point above the upper arm means it has moved down.</span></li>
+    <li><span><strong>Slide the mask back.</strong> Move the origin to earlier points to find the first one that signals. That tells you roughly when the shift began.</span></li>
+  </ol>
+
+  <figure class="fig" id="fig-vmask">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">A V-mask on the handbook's cumulative sum</h3></div>
+    <div class="controls">
+      <label class="control" for="vmask-at">
+        <span class="control-label">Mask origin at <output for="vmask-at">group 20</output></span>
+        <input type="range" id="vmask-at" min="1" max="20" step="1" value="20">
+      </label>
+    </div>
+    <div class="fig-chart" id="vmask-chart"></div>
+    <ul class="legend" id="vmask-legend"></ul>
+    <div id="vmask-readouts"></div>
+    <figcaption>The mask uses the handbook's values <span class="m">k = 0.3175</span> per group and <span class="m">h = 4.1959</span>, so the vertex sits <span class="m">d = h/k \approx 13.2</span> groups ahead of the origin. Move the origin with the slider, or click a point to put the mask there. Earlier points fall below the lower arm for every origin from group 14 on, and none do at group 13, so group 14 is the first signal. The last two readouts run the tabular CUSUM of section 6.4 on the same data: the two methods agree at every group.</figcaption>
+  </figure>
+
+  <h3>Designing the mask</h3>
+  <p>The handbook gives a design recipe built on two error rates: <span class="m">\alpha</span>, the probability of a false alarm, and <span class="m">\beta</span>, the probability of missing a shift of <span class="m">\delta</span> standard errors.</p>
+  <div class="eq-grid"><div class="eq">k = \frac{\delta\,\sigma_{\bar{x}}}{2}</div><div class="eq">d = \frac{2}{\delta^2}\,\ln\!\left(\frac{1-\beta}{\alpha}\right)</div><div class="eq">h = d\,k</div></div>
+  <p>For the example, the handbook takes <span class="m">\alpha = 0.0027</span> (the false alarm rate of a 3σ Shewhart chart), <span class="m">\beta = 0.01</span> and <span class="m">\delta = 1</span>. The process standard deviation is 1.27 and <span class="m">n = 4</span>, so <span class="m">\sigma_{\bar{x}} = 1.27/\sqrt{4} = 0.635</span> and <span class="m">k = 0.3175</span>. The formula for <span class="m">d</span> then gives <span class="m">d = 11.81</span> and <span class="m">h = 3.75</span>. The handbook's worked table uses a slightly wider <span class="m">h = 4.1959</span>, which corresponds to <span class="m">d \approx 13.2</span>. Both values first signal at group 14.</p>
+  <p>Many practitioners skip <span class="m">\alpha</span> and <span class="m">\beta</span>. A rule of thumb from Montgomery, which the handbook quotes, sets <span class="m">k</span> to half the shift you want to catch and <span class="m">h</span> to about 4 or 5, both measured in units of <span class="m">\sigma_{\bar{x}}</span>. To catch a <span class="m">1\sigma_{\bar{x}}</span> shift, use <span class="m">k = 0.5\sigma_{\bar{x}}</span> and <span class="m">h = 4\sigma_{\bar{x}}</span> or <span class="m">5\sigma_{\bar{x}}</span>.</p>
+
+  <div class="from-nist">
+    <span class="eyebrow">Handbook 6.3.2.3</span>
+    <p>The handbook calls the V-mask a leftover from the days before computers and recommends the tabular method for spreadsheets and software. The mask remains the clearest picture of what a CUSUM tests. <a href="https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc323.htm" target="_blank" rel="noopener">Read the section</a></p>
+  </div>
+
+  <div class="check" id="m6-q3">
+    <p class="check-q">With the V-mask on the latest point, an earlier point falls below the lower arm. What does that indicate?</p>
+    <ul class="check-options">
+      <li data-correct>The process mean has shifted up</li>
+      <li data-why="A low earlier point means the sum has climbed a long way since then. A climbing sum comes from averages above target.">The process mean has shifted down</li>
+      <li data-why="A CUSUM of averages responds to the mean. A change in spread needs its own chart, such as an R or s chart.">The process variation has increased</li>
+      <li data-why="Only earlier points, to the left of the origin, are tested. Points outside either arm signal.">Nothing, because only points beyond the vertex count</li>
+    </ul>
+    <div class="check-explain"><p>The lower arm marks how far the sum may fall below the latest point while the mean is on target. A point beneath it means the sum has since risen by more than <span class="m">h</span> plus <span class="m">k</span> for every sample in between, which only a sustained upward shift produces.</p></div>
+  </div>
+</section>
+
+<section id="tabular">
+  <h2>The tabular CUSUM</h2>
+  <p>The tabular form does the V-mask's work with two running sums and no geometry. One sum collects evidence of an upward shift, the other evidence of a downward shift:</p>
+  <div class="eq-grid"><div class="eq">S_{\text{hi}}(i) = \max\!\left(0,\; S_{\text{hi}}(i-1) + \bar{x}_i - \hat{\mu}_0 - k\right)</div><div class="eq">S_{\text{lo}}(i) = \max\!\left(0,\; S_{\text{lo}}(i-1) + \hat{\mu}_0 - k - \bar{x}_i\right)</div></div>
+  <p>Both sums start at zero, and the process is out of control when either one exceeds the decision interval <span class="m">h</span>. The allowance <span class="m">k</span> is subtracted every time, so deviations smaller than <span class="m">k</span> drain the sum and ordinary noise keeps it near zero. The floor at zero stops the sum from banking credit while the process runs on the other side of target, so it reacts as soon as a shift arrives. You can work in data units, as the handbook's example does, or divide everything by <span class="m">\sigma_{\bar{x}}</span>.</p>
+  <p>The two methods are the same test. <span class="m">S_{\text{hi}}(i)</span> equals the largest total of <span class="m">\bar{x} - \hat{\mu}_0 - k</span> over any run of recent samples ending at sample <span class="m">i</span>, or zero if every such total is negative. A point falls below the V-mask's lower arm exactly when one of those totals exceeds <span class="m">h</span>.</p>
+
+  <figure class="fig" id="fig-tabular">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">The handbook example as a tabular CUSUM</h3></div>
+    <div class="controls">
+      <label class="control" for="tab-k">
+        <span class="control-label">Allowance k <output for="tab-k">0.50σ = 0.3175</output></span>
+        <input type="range" id="tab-k" min="0.1" max="1.5" step="0.05" value="0.5">
+      </label>
+      <label class="control" for="tab-h">
+        <span class="control-label">Decision interval h <output for="tab-h">6.61σ = 4.1959</output></span>
+        <input type="range" id="tab-h" min="1" max="8" step="0.05" value="6.6">
+      </label>
+      <div class="control-row" style="justify-content:flex-end">
+        <button class="btn small" id="tab-reset" type="button">Handbook values</button>
+      </div>
+    </div>
+    <div class="fig-chart" id="tab-chart"></div>
+    <ul class="legend" id="tab-legend"></ul>
+    <div id="tab-readouts"></div>
+    <details class="data"><summary>Data table, with the handbook's columns</summary><div class="table-wrap" id="tab-table"></div></details>
+    <figcaption>The upper sum rises above zero; the lower sum is drawn below zero so both fit on one chart, and the dashed lines mark <span class="m">\pm h</span>. Slider values are in units of <span class="m">\sigma_{\bar{x}} = 0.635</span>. With the handbook's values the upper sum first exceeds <span class="m">h</span> at group 14, where it reaches 4.94, and an asterisk in the table marks each signal. Lower <span class="m">h</span> to <span class="m">4\sigma_{\bar{x}}</span> and the signal moves to group 13. Raise <span class="m">k</span> and both sums drain faster. The run-length readouts show what each setting costs; the next section explains them.</figcaption>
+  </figure>
+
+  <p>The handbook's <span class="m">h = 4.1959</span> is <span class="m">6.6\sigma_{\bar{x}}</span>, well above the rule of thumb. That buys a very long in-control run, about 4,700 samples between false alarms on the upper sum, at the price of slower detection. A <span class="m">1\sigma_{\bar{x}}</span> shift takes about 13.6 samples to detect on average, against 8.4 with <span class="m">h = 4\sigma_{\bar{x}}</span>.</p>
+  <p>The shift in this example is also large. Groups 13 to 20 average 327.70, about <span class="m">4.2\sigma_{\bar{x}}</span> above target, so an <span class="m">\bar{X}</span> chart with the same <span class="m">\sigma_{\bar{x}}</span> would flag group 13 by itself, one group before the CUSUM. The example shows the mechanics clearly. Figure 6.1 shows the shifts where a CUSUM earns its place.</p>
+
+  <div class="pitfall">
+    <span class="eyebrow">Common mistake</span>
+    <p>After a signal, once the cause is found and fixed, reset both sums to zero. Left alone, a large upper sum drains by only about <span class="m">k</span> per sample, so in this example a sum of 19 would keep signalling for dozens of samples after the process was back on target.</p>
+  </div>
+
+  <div class="check" id="m6-q4" data-answer="4.94" data-tolerance="0.01">
+    <p class="check-q">In the handbook example <span class="m">\hat{\mu}_0 = 325</span>, <span class="m">k = 0.3175</span> and the upper sum after group 13 is 3.0075. Group 14 has <span class="m">\bar{x} = 327.25</span>. Compute <span class="m">S_{\text{hi}}(14)</span> to two decimals.</p>
+    <div class="check-explain"><p><span class="m">S_{\text{hi}}(14) = \max(0,\; 3.0075 + 327.25 - 325 - 0.3175) = 4.94</span>. That exceeds <span class="m">h = 4.1959</span>, so group 14 is the first out-of-control signal, as in the handbook's table.</p></div>
+  </div>
+</section>
+
+<section id="run-length">
+  <h2>Choosing k and h with average run length</h2>
+  <p>The average run length (ARL) is the average number of subgroups a chart plots before it signals. A good design has a long ARL while the process is in control, so false alarms are rare, and a short ARL once the mean has shifted. The two parameters split the work:</p>
+  <ul>
+    <li><span class="m">k</span> sets which shift the chart is tuned for. Half the shift you care about is the usual choice.</li>
+    <li><span class="m">h</span> trades false alarms against speed. A larger <span class="m">h</span> lengthens every run length, in control and out.</li>
+  </ul>
+  <p>The handbook compares a CUSUM with <span class="m">k = 0.5\sigma_{\bar{x}}</span> against a 3σ <span class="m">\bar{X}</span> chart. The table repeats that comparison with values recomputed for this course.</p>
+
+  <div class="table-scroll">
+    <table class="ref">
+      <thead><tr><th class="num">Shift (<span class="m">\sigma_{\bar{x}}</span>)</th><th class="num">CUSUM, h = 4</th><th class="num">CUSUM, h = 5</th><th class="num">Shewhart, 3σ</th></tr></thead>
+      <tbody>
+        <tr><td class="num">0</td><td class="num">335</td><td class="num">930</td><td class="num">370</td></tr>
+        <tr><td class="num">0.5</td><td class="num">26.7</td><td class="num">38.0</td><td class="num">155</td></tr>
+        <tr class="is-hi"><td class="num">1</td><td class="num">8.38</td><td class="num">10.4</td><td class="num">43.9</td></tr>
+        <tr><td class="num">2</td><td class="num">3.34</td><td class="num">4.01</td><td class="num">6.30</td></tr>
+        <tr><td class="num">3</td><td class="num">2.19</td><td class="num">2.57</td><td class="num">2.00</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The CUSUM columns are for a single sum watching for an upward shift, which is how the handbook sets up its comparison with the two-sided <span class="m">\bar{X}</span> chart. Running both sums together roughly halves the in-control ARL, to about 168 for <span class="m">h = 4</span> and 465 for <span class="m">h = 5</span>. The values come from a Markov-chain approximation (Brook and Evans) and agree with the handbook's table to within one unit in the last digit, with one exception: for a <span class="m">0.5\sigma_{\bar{x}}</span> shift and <span class="m">h = 5</span> the handbook prints 30.0, where the calculation gives 38.0.</p>
+
+  <figure class="fig" id="fig-arl">
+    <div class="fig-head"><span class="fig-num"></span><h3 class="fig-title">Average run length: CUSUM against a Shewhart chart</h3></div>
+    <div class="controls">
+      <label class="control" for="arl-k">
+        <span class="control-label">Allowance k <output for="arl-k">0.50σ</output></span>
+        <input type="range" id="arl-k" min="0.25" max="1.5" step="0.05" value="0.5">
+      </label>
+      <label class="control" for="arl-h">
+        <span class="control-label">Decision interval h <output for="arl-h">4.0σ</output></span>
+        <input type="range" id="arl-h" min="2" max="8" step="0.5" value="4">
+      </label>
+      <div class="control-row">
+        <label class="check-inline"><input type="checkbox" id="arl-two"> Two-sided CUSUM (both sums)</label>
+      </div>
+    </div>
+    <div class="fig-chart" id="arl-chart"></div>
+    <ul class="legend" id="arl-legend"></ul>
+    <div id="arl-readouts"></div>
+    <figcaption>The vertical axis is logarithmic: each gridline is ten times the one below. Dots mark shifts of 0, 1, 2 and 3. At zero shift a higher ARL is better; at every other shift a lower one is. Raise <span class="m">h</span> and the whole CUSUM curve lifts. Move <span class="m">k</span> and the curve tilts: a small <span class="m">k</span> favors small shifts and a large one favors large shifts. Where the curves cross, the <span class="m">\bar{X}</span> chart becomes the faster detector. Tick the two-sided box to see the false-alarm cost of watching both directions.</figcaption>
+  </figure>
+
+  <p>Above the break-even point the Shewhart chart wins. A single extreme point is all it needs, while the CUSUM must first subtract its allowance and build up past <span class="m">h</span>. That is why the two are often run side by side, with the CUSUM watching for small, persistent shifts and Shewhart limits catching large, sudden ones.</p>
+
+  <div class="from-nist">
+    <span class="eyebrow">Handbook 6.3.2.3.1</span>
+    <p>The handbook recommends starting from the quality levels you can accept and reject, choosing target run lengths for each, and then finding the subgroup size, <span class="m">k</span> and <span class="m">h</span> with nomographs or software. For two-sided monitoring it uses two one-sided charts. <a href="https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc3231.htm" target="_blank" rel="noopener">Read the section</a></p>
+  </div>
+
+  <div class="check" id="m6-q5">
+    <p class="check-q">With <span class="m">k = 0.5\sigma_{\bar{x}}</span> and <span class="m">h = 4\sigma_{\bar{x}}</span>, which chart detects a <span class="m">3\sigma_{\bar{x}}</span> shift faster on average?</p>
+    <ul class="check-options">
+      <li data-why="The CUSUM's advantage is on small shifts. At 3σ its allowance and decision interval slow it down slightly.">The CUSUM, because it is always faster</li>
+      <li data-correct>The Shewhart chart, with an ARL of 2.00 against 2.19</li>
+      <li data-why="The run lengths differ: 2.00 for the Shewhart chart against 2.19 for the CUSUM.">Neither, because their run lengths are identical</li>
+    </ul>
+    <div class="check-explain"><p>A 3σ shift puts the new mean on the <span class="m">\bar{X}</span> chart's UCL, so half the points cross it and the ARL is 2.00. The CUSUM needs its sum to build past <span class="m">h</span>, which takes 2.19 samples on average. Large shifts favor the Shewhart chart.</p></div>
+  </div>
+</section>
+
+<section id="summary" class="summary">
+  <h2>Takeaways</h2>
+  <ul>
+    <li>A Shewhart chart uses only the latest point, so it is slow to catch shifts of about <span class="m">2\sigma_{\bar{x}}</span> or less. A 1σ shift takes about 44 subgroups on average.</li>
+    <li>A CUSUM plots the running total of deviations from target. Its slope estimates the current mean, and a persistent shift bends it upward or downward.</li>
+    <li>The V-mask and the tabular CUSUM are the same test. The tabular form, with upper and lower sums that reset at zero, is the one to use in software.</li>
+    <li>Set the allowance <span class="m">k</span> to half the shift you want to detect and the decision interval <span class="m">h</span> to about 4 or 5 standard errors. Check the choice with average run lengths.</li>
+    <li>CUSUM charts win on small shifts and Shewhart charts on large ones, so the two work well side by side.</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>
